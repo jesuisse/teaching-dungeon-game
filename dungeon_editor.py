@@ -12,10 +12,9 @@ import storage
 # Legt fest, wie stark die Atlas-Bilder hochskaliert werden. 
 ATLAS_SCALE = 3
 
-
 # Diese Konstanten legen die Grösse des Grafikfensters fest
 WIDTH = 1060
-HEIGHT = 900
+HEIGHT = 800
 
 RESIZABLE = False
 ALWAYS_REDRAW = False
@@ -23,8 +22,8 @@ ALWAYS_REDRAW = False
 ## Im Moment ist der verwendete Tile-Atlas immer der mit ID 1
 ATLAS_ID = 1
 
-
-tilegrid_size = (15, 15)
+# Grösse des editierbaren Raumes in Tiles
+MAPSIZE = (15, 15)
 
 tile_image = None
 grid_rect = None
@@ -38,6 +37,7 @@ draw_mode = 0
 tile_atlas = None
 tilemap = None
 
+# Storage id des aktuell im Editor bearbeiteten Raums
 active_room_id = None
 
 def on_draw():
@@ -51,40 +51,42 @@ def on_draw():
     # Rendert Text
     fontname = get_default_fontname()
     fontsize = 30
-    draw_text(fontname, fontsize, "Dare to do peachy things!", (40, 800), Color("orange"))
+    #draw_text(fontname, fontsize, "Dare to do peachy things!", (40, 800), Color("orange"))
     
 
 
 def to_local(canvasitem, pos):
     return (pos[0]-canvasitem.position[0], pos[1]-canvasitem.position[1])
 
+
 def on_input(event):
-    global draw_mode
-    
+    global draw_mode    
  
     if event.type == MOUSEMOTION:
         mouse_coords = event.pos
 
-        if tile_atlas.hovered_tile != -1:
+        mouse_in_tile_atlas = tile_atlas.get_bbox().collidepoint(mouse_coords)
+        mouse_in_tilemap = tilemap.get_bbox().collidepoint(mouse_coords)
+
+        # Check whether the mouse is still hovering and disable the hover if not
+        if tile_atlas.hovered_tile != -1 and not mouse_in_tile_atlas:
             tile_atlas.set_hovered_tile(-1)
-        if tilemap.hovered_cell != -1:
+        if tilemap.hovered_cell != -1 and not mouse_in_tilemap:
             tilemap.set_hovered_cell(-1)
 
-        if tile_atlas.get_bbox().collidepoint(mouse_coords):
+        # Handle hovering and drawing tiles
+        if mouse_in_tile_atlas:
             tile_idx = tile_atlas.get_tile_index(to_local(tile_atlas, mouse_coords))
             tile_atlas.set_hovered_tile(tile_idx)            
-            return
-        
-        elif tilemap.get_bbox().collidepoint(mouse_coords):
+                    
+        elif mouse_in_tilemap:
             cell_idx = tilemap.get_cell_index(to_local(tilemap, mouse_coords))
             tilemap.set_hovered_cell(cell_idx)
             if draw_mode == 1:
                 tilemap.set_tile(tilemap.hovered_cell, tile_atlas.selected_tile)
             elif draw_mode == 2:
                 tilemap.set_tile(tilemap.hovered_cell, None)            
-            return
-           
-
+    
     if event.type == MOUSEBUTTONDOWN:
         if tile_atlas.hovered_tile != -1:
             tile_atlas.set_selected_tile(tile_atlas.hovered_tile)
@@ -94,14 +96,14 @@ def on_input(event):
                 tilemap.set_tile(tilemap.hovered_cell, tile_atlas.selected_tile)
             elif event.button == 3:
                 draw_mode = 2
-                tilemap.set_tile(tilemap.hovered_cell, None)
-        
+                tilemap.set_tile(tilemap.hovered_cell, None)        
     
+    # stop drawing or erasing tiles
     if event.type == MOUSEBUTTONUP:
         if draw_mode:
             draw_mode = 0
 
-
+    # handle keyboard shortcuts for loading/saving rooms
     if event.type == KEYDOWN and event.key == pygame.K_n:
         create_new_room()
     
@@ -156,7 +158,6 @@ def open_textbox(label, callback):
 def on_ready():
     # Wird aufgerufen, wenn das Grafik-Framework bereit ist, unmittelbar vor dem Start der Event Loop.
 
-    # Lade ein Bild
     global tile_image, textinput, active_popup, tile_atlas, tilemap
 
     try:
@@ -165,24 +166,21 @@ def on_ready():
         tile_image = pygame.transform.scale(tile_image, size)
 
     except FileNotFoundError:
-        print("Tileset image not found...")
+        print("Tile Atlas image not found...")
         sys.exit(1)
 
-    # Verbinde dich mit Speicher-Backend (Datenbank)
+    # Connect to the storage backend (in our case, sqlite)
     storage.db_connect()
 
-
-    # Setze Fenstertitel
     set_window_title("Dungeon Editor")
 
     # Atlas aus Bild erzeugen und positionieren
     tile_atlas = TileAtlas(position=Vector2(750, 20), tilesize=(16*ATLAS_SCALE,16*ATLAS_SCALE), atlassize=(6,15), image=tile_image)
 
     # Die tilemap erzeugen 
-    tilemap = TileMap(position=Vector2(20, 20), mapsize=(15,15), atlas=tile_atlas) 
+    tilemap = TileMap(position=Vector2(20, 20), mapsize=MAPSIZE, atlas=tile_atlas) 
     
     tree = get_scenetree()
-
     root = CanvasItem(position=Vector2(0, 0), name="root")
     root.add_child(tile_atlas)
     root.add_child(tilemap)
@@ -190,5 +188,5 @@ def on_ready():
     tree.set_root(root)
     
 
-# Konfiguriert und startet das Grafikprogramm.
+# Konfiguriert und startet das Framework
 go()

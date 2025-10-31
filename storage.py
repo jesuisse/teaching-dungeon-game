@@ -7,7 +7,10 @@ def db_connect():
     connection = sqlite3.connect("resources/default_db.db")
 
 
-def store_as_new_room(name, tilemap):    
+def store_new_room(name, tilemap):  
+    """
+    Store a new room in the database and return its assigned ID
+    """  
     cur = connection.cursor()
     # wir verwenden im Moment immer den Tile Atlas mit der ID 1 und die Grösse 15x15    
     QUERY = "INSERT INTO Rooms (name, atlas_id, size_x, size_y) VALUES (?, ?, ?, ?)"        
@@ -26,9 +29,12 @@ def store_as_new_room(name, tilemap):
 
 
 def store_room(roomid, tilemap):
+    """
+    Store the tilemap data for an existing room
+    """
     QUERY = "DELETE FROM TileMap WHERE roomid = ?"
     cur = connection.cursor()
-    cur.execute(QUERY, [roomid])
+    cur.execute(QUERYhave a size define, [roomid])
     QUERY = "INSERT INTO TileMap (tileid, tileindex, roomid) VALUES (?, ?, ?)"
     for index, tileid in enumerate(tilemap.tilemap):
         if tileid is None:
@@ -39,17 +45,39 @@ def store_room(roomid, tilemap):
 
 
 
-def load_tilemap_data(roomid):
+def load_tilemap_data(roomid) -> list:
+    """
+    Load the tilemap data for a given room. Returns a list of tile IDs, 
+    with None for empty tiles.
+    """
     cur = connection.cursor()
     QUERY = "SELECT tileid, tileindex FROM TileMap WHERE roomid = ?"
-    cur.execute(QUERY, [roomid,])
+    cur.execute(QUERY, (roomid,))
     row = cur.fetchone()
-    # Im Moment verewnden wir eine fest codierte Grösse 15x15
-    tiles = [None]*15*15
+    room_size = get_room_size(roomid)
+    if not room_size:
+        raise ValueError(f"Room {roomid} does not have a size defined")
+        
+    tiles = [None]*room_size[0]*room_size[1]
     while row:
         tiles[row[1]] = row[0]
         row = cur.fetchone()
     return tiles
+
+
+def get_room_size(roomid) -> tuple:
+    """
+    Get the size of a room. Returns a (size_x, size_y) tuple
+    """
+    cur = connection.cursor()
+    QUERY = "SELECT size_x, size_y FROM Rooms WHERE id = ?"
+    cur.execute(QUERY, (roomid,))
+    row = cur.fetchone()
+    if row:
+        return (row[0], row[1])
+    else:
+        raise ValueError(f"Room {roomid} does not exist in storage backend")
+    
 
 
 

@@ -46,6 +46,11 @@ class InputPrompt(PopupWindow):
             self.prompt = kwargs['prompt']
         else:
             self.prompt = ""
+        
+        if "callback" in kwargs:
+            self.callback = kwargs['callback']
+        else:
+            self.callback = None
 
         labelsize = _draw.get_text_size(self.font, self.prompt)
         inputsize = [self.size[0]-labelsize[0]-3*self.padding[0], self.size[1]-2*self.padding[1]]
@@ -54,6 +59,9 @@ class InputPrompt(PopupWindow):
         self.add_child(self.inputline)
         self.inputline.focused = True
 
+
+    def get_text(self):
+        return self.inputline.gettext()
 
     def on_draw(self, surface):
         super().on_draw(surface)        
@@ -67,6 +75,8 @@ class InputPrompt(PopupWindow):
     def on_input(self, event):
         if event.type == KEYDOWN and (event.key == pygame.K_RETURN or event.key == pygame.K_ESCAPE):
             get_scenetree().clear_modal(self)
+            if self.callback:
+                self.callback()
         else:
             self.inputline.on_input(event)
         

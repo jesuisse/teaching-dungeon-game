@@ -6,6 +6,7 @@ from lineedit import InputLine
 from popups import InputPrompt
 from tileatlas import TileAtlas
 from tilemap import TileMap
+import storage
 
 
 # Diese Konstanten legen die Grösse des Grafikfensters fest
@@ -14,6 +15,9 @@ HEIGHT = 900
 
 RESIZABLE = False
 ALWAYS_REDRAW = False
+
+## Im Moment ist der verwendete Tile-Atlas immer der mit ID 1
+ATLAS_ID = 1
 
 
 tilegrid_size = (15, 15)
@@ -27,13 +31,10 @@ tile_size = (48, 48)
 # 1 = drawing, -1 = erasing
 draw_mode = 0
 
-textinput = None
-
-active_popup = None
-
 tile_atlas = None
 tilemap = None
 
+active_room_id = None
 
 def on_draw():
     # Wird aufgerufen, um den Inhalt des Grafikfensters neu zu zeichnen
@@ -47,29 +48,8 @@ def on_draw():
     fontname = get_default_fontname()
     fontsize = 30
     draw_text(fontname, fontsize, "Dare to do peachy things!", (40, 800), Color("orange"))
-
-
-    if active_popup:
-        active_popup.on_draw(get_window_surface())
-
-
-
-def let_popup_handle_event(event):
-    if event.type == MOUSEMOTION or event.type == MOUSEBUTTONDOWN or event.type == MOUSEBUTTONUP:
-        rect = Rect(active_popup.position, active_popup.size)
-        if rect.collidepoint(event.pos):
-            active_popup.on_input(event)
-            # consume mouse event
-            return True
-        else:
-            # pass on event 
-            return False     
-    elif event.type == KEYDOWN or event.type == KEYUP:
-        active_popup.on_input(event)
-        # consume event
-        return True
     
-    return False
+
 
 def to_local(canvasitem, pos):
     return (pos[0]-canvasitem.position[0], pos[1]-canvasitem.position[1])
@@ -77,9 +57,6 @@ def to_local(canvasitem, pos):
 def on_input(event):
     global draw_mode
     
-    if active_popup:
-        if let_popup_handle_event(event):
-            return
  
     if event.type == MOUSEMOTION:
         mouse_coords = event.pos
@@ -121,6 +98,54 @@ def on_input(event):
             draw_mode = 0
 
 
+    if event.type == KEYDOWN and event.key == pygame.K_n:
+        create_new_room()
+    
+    if event.type == KEYDOWN and event.key == pygame.K_l:
+        load_room()
+
+    if event.type == KEYDOWN and event.key == pygame.K_s:
+        store_room()
+
+
+
+def create_new_room():
+    open_textbox("Raumname:", on_roomname_entered)
+
+def store_room():
+    storage.store_room(active_room_id, tilemap)
+
+def load_room():
+    open_textbox("Raumid:", on_load_id_entered)
+
+
+def on_roomname_entered(prompt):
+    global active_room_id
+    name = prompt.get_text()
+    active_room_id = storage.store_as_new_room(name, tilemap)
+    print("Neuer Raum mit id", active_room_id, "erzeugt")
+    tree = get_scenetree()
+    tree.root.remove_child(prompt)
+
+def on_load_id_entered(prompt):
+    global active_room_id
+    active_room_id = int(prompt.get_text())
+    tilemap_data = storage.load_tilemap_data(active_room_id)
+    if tilemap_data:
+        tilemap.tilemap = tilemap_data
+        tilemap.request_redraw()
+    tree = get_scenetree()
+    tree.root.remove_child(prompt)
+
+
+    
+def open_textbox(label, callback):
+    font = get_font(get_default_fontname(), 24)
+    prompt = InputPrompt(prompt=label, size=Vector2(700, 100), color=Color(150,150,150), bgcolor=Color(25, 25, 25, 200),
+            font=font, position=Vector2(30, 150), padding=(20, 20), callback=lambda: callback(prompt))
+    tree = get_scenetree()    
+    tree.root.add_child(prompt)
+    tree.make_modal(prompt)
 
 
 
@@ -138,6 +163,10 @@ def on_ready():
         print("Tileset image not found...")
         sys.exit(1)
 
+    # Verbinde dich mit Speicher-Backend (Datenbank)
+    storage.db_connect()
+
+
     # Setze Fenstertitel
     set_window_title("Dungeon Editor")
 
@@ -146,26 +175,15 @@ def on_ready():
 
     # Die tilemap erzeugen 
     tilemap = TileMap(position=Vector2(20, 20), mapsize=(15,15), atlas=tile_atlas) 
-
-
-    font = get_font(get_default_fontname(), 24)
     
-    prompt = InputPrompt(prompt="Name:", size=Vector2(700, 100), color=Color(150,150,150), bgcolor=Color(25, 25, 25, 200),
-            font=font, position=Vector2(30, 150), padding=(20, 20))
-
     tree = get_scenetree()
 
     root = CanvasItem(position=Vector2(0, 0), name="root")
     root.add_child(tile_atlas)
     root.add_child(tilemap)
-    
-    root.add_child(prompt)
-    tree.make_modal(prompt)
-
+        
     tree.set_root(root)
     
-   
-
 
 # Konfiguriert und startet das Grafikprogramm.
 go()

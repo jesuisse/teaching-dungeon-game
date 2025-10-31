@@ -60,7 +60,12 @@ def on_input(event):
  
     if event.type == MOUSEMOTION:
         mouse_coords = event.pos
-            
+
+        if tile_atlas.hovered_tile != -1:
+            tile_atlas.set_hovered_tile(-1)
+        if tilemap.hovered_cell != -1:
+            tilemap.set_hovered_cell(-1)
+
         if tileset_rect.collidepoint(mouse_coords):
             tile_idx = tile_atlas.get_tile_index(to_local(tile_atlas, mouse_coords))
             tile_atlas.set_hovered_tile(tile_idx)            
@@ -74,12 +79,7 @@ def on_input(event):
             elif draw_mode == 2:
                 tilemap.set_tile(tilemap.hovered_cell, None)            
             return
-
-        if tile_atlas.hovered_tile != -1:
-            tile_atlas.set_hovered_tile(-1)
-        if tilemap.hovered_cell != -1:
-            tilemap.set_hovered_cell(-1)
-            
+           
 
     if event.type == MOUSEBUTTONDOWN:
         if tile_atlas.hovered_tile != -1:

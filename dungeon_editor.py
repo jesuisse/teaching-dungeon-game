@@ -1,5 +1,6 @@
 import sys, os.path, pygame.transform
 sys.path.append(os.path.join(sys.path[0], ".."))
+sys.path.append((os.path.join(sys.path[0], "graphics2d")))
 
 from graphics2d import *
 from lineedit import InputLine
@@ -7,6 +8,9 @@ from popups import InputPrompt
 from tileatlas import TileAtlas
 from tilemap import TileMap
 import storage
+
+# Legt fest, wie stark die Atlas-Bilder hochskaliert werden. 
+ATLAS_SCALE = 3
 
 
 # Diese Konstanten legen die Grösse des Grafikfensters fest
@@ -23,9 +27,9 @@ ATLAS_ID = 1
 tilegrid_size = (15, 15)
 
 tile_image = None
-grid_rect = Rect(20, 20, 720, 720)
-tileset_rect = Rect(750, 20, 6*48, 15*48)
-tile_size = (48, 48)
+grid_rect = None
+tileset_rect = None
+
 
 
 # 1 = drawing, -1 = erasing
@@ -66,12 +70,12 @@ def on_input(event):
         if tilemap.hovered_cell != -1:
             tilemap.set_hovered_cell(-1)
 
-        if tileset_rect.collidepoint(mouse_coords):
+        if tile_atlas.get_bbox().collidepoint(mouse_coords):
             tile_idx = tile_atlas.get_tile_index(to_local(tile_atlas, mouse_coords))
             tile_atlas.set_hovered_tile(tile_idx)            
             return
         
-        elif grid_rect.collidepoint(mouse_coords):
+        elif tilemap.get_bbox().collidepoint(mouse_coords):
             cell_idx = tilemap.get_cell_index(to_local(tilemap, mouse_coords))
             tilemap.set_hovered_cell(cell_idx)
             if draw_mode == 1:
@@ -154,9 +158,10 @@ def on_ready():
 
     # Lade ein Bild
     global tile_image, textinput, active_popup, tile_atlas, tilemap
+
     try:
         tile_image = load_image("resources/ohmydungeon_v1.1.png")
-        size = (tile_image.get_width()*3, tile_image.get_height()*3)
+        size = (tile_image.get_width()*ATLAS_SCALE, tile_image.get_height()*ATLAS_SCALE)
         tile_image = pygame.transform.scale(tile_image, size)
 
     except FileNotFoundError:
@@ -171,7 +176,7 @@ def on_ready():
     set_window_title("Dungeon Editor")
 
     # Atlas aus Bild erzeugen und positionieren
-    tile_atlas = TileAtlas(position=Vector2(750, 20), tilesize=(48,48), atlassize=(6,15), image=tile_image)
+    tile_atlas = TileAtlas(position=Vector2(750, 20), tilesize=(16*ATLAS_SCALE,16*ATLAS_SCALE), atlassize=(6,15), image=tile_image)
 
     # Die tilemap erzeugen 
     tilemap = TileMap(position=Vector2(20, 20), mapsize=(15,15), atlas=tile_atlas) 

@@ -26,7 +26,7 @@ class PopupWindow(CanvasRectAreaItem):
     def on_draw(self, surface):
         mysurface = pygame.Surface(self.size, flags=pygame.SRCALPHA)        
         mysurface.fill(self.bgcolor)
-        surface.blit(mysurface, self.position)
+        surface.blit(mysurface, Vector2(0, 0))
 
 class InputPrompt(PopupWindow):
     def __init__(self, **kwargs):
@@ -48,8 +48,10 @@ class InputPrompt(PopupWindow):
             self.prompt = ""
 
         labelsize = _draw.get_text_size(self.font, self.prompt)
-        inputsize = [self.size[0]-labelsize[0], self.size[1]]
-        self.inputline = InputLine(color=self.color, bgcolor=self.bgcolor, font=self.font, position=[labelsize[0], 0], size=inputsize)
+        inputsize = [self.size[0]-labelsize[0]-3*self.padding[0], self.size[1]-2*self.padding[1]]
+        inputpos = Vector2(labelsize[0]+2*self.padding[0], self.padding[1])
+        self.inputline = InputLine(color=self.color, bgcolor=self.bgcolor, font=self.font, position=inputpos, size=inputsize)
+        self.add_child(self.inputline)
 
 
     def on_draw(self, surface):
@@ -57,15 +59,15 @@ class InputPrompt(PopupWindow):
         labelsize = _draw.get_text_size(self.font, self.prompt)
         rendered_text = _draw.draw_text(self.font, self.prompt, self.color, antialias=True)
         
-        pos = Vector2(self.position.x + self.padding[0], self.position.y + self.size[1] / 2 - labelsize[1]/2)
+        pos = Vector2(self.padding[0], self.size[1] / 2 - labelsize[1]/2)
         
         surface.blit(rendered_text, pos)
-
-        self.inputline.on_draw(surface)
-
+     
     def on_input(self, event):
-        self.inputline.on_input(event)
-
+        if event.type == KEYDOWN and (event.key == pygame.K_RETURN or event.key == pygame.K_ESCAPE):
+            get_scenetree().clear_modal(self)
+        else:
+            self.inputline.on_input(event)
         
 
 

@@ -1,6 +1,7 @@
 import pygame
 import unicodedata
 from graphics2d import *
+import graphics2d.drawing as _draw
 
 class InputLine(CanvasRectAreaItem):
     """
@@ -83,7 +84,7 @@ class InputLine(CanvasRectAreaItem):
 
 
     def set_dirty(self):
-        request_redraw()
+        self.request_redraw()
         self.dirty = True
 
     def layout(self, dimension):
@@ -104,16 +105,17 @@ class InputLine(CanvasRectAreaItem):
         mysurface = pygame.Surface(self.size, flags=pygame.SRCALPHA)
         rendered = self.render_text()
         mysurface.fill(self.bgcolor)
-        mysurface.blit(rendered, self.padding, (0,0, self.size[0]-2*self.padding[0], self.size[1]-2*self.padding[1]))
+        posy = (self.size[1]-2*self.padding[1] - rendered.get_height())/2
+        mysurface.blit(rendered, (self.padding[0], posy), (0,0, self.size[0]-2*self.padding[0], self.size[1]-2*self.padding[1]))
         self.paintCursor(mysurface)
-        surface.blit(mysurface, self.position)
+        surface.blit(mysurface, Vector2(0, 0))
         self.dirty = False
 
     def paintCursor(self, surface):
         if self.focused:
             s = ''.join(self.text[0:self.pos])
             dims = self.font.size(s)
-            pygame.draw.line(surface, self.color, (self.padding[0]+dims[0], self.padding[1]), (self.padding[0]+dims[0], self.padding[1]+dims[1]-1), 2)
+            _draw.draw_line(surface, (self.padding[0]+dims[0], self.padding[1]), (self.padding[0]+dims[0], self.padding[1]+dims[1]-1), self.color, 2)
 
     def getKeyHandler(self, k):
         if k in InputLine.handlers:

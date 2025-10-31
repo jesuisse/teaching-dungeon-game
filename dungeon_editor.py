@@ -149,14 +149,8 @@ def on_ready():
 
 
     font = get_font(get_default_fontname(), 24)
-    textinput = InputLine(text="Hello World", 
-                        position=Vector2(30, 350), 
-                        size=Vector2(700, 120),
-                        padding=[10, 40],
-                        bgcolor=Color(30, 30, 30, 180),
-                        color=Color(150,150,150),
-                        font=font)
-    prompt = InputPrompt(prompt="Name:", size=Vector2(700, 100), color=Color(150,150,150), bgcolor=Color(30, 30, 30, 200),
+    
+    prompt = InputPrompt(prompt="Name:", size=Vector2(700, 100), color=Color(150,150,150), bgcolor=Color(25, 25, 25, 200),
             font=font, position=Vector2(30, 150), padding=(20, 20))
 
     tree = get_scenetree()
@@ -170,10 +164,7 @@ def on_ready():
 
     tree.set_root(root)
     
-
-    #active_popup = prompt
-    textinput.focused = True
-
+   
 
 
 # Konfiguriert und startet das Grafikprogramm.

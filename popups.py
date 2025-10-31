@@ -50,8 +50,9 @@ class InputPrompt(PopupWindow):
         labelsize = _draw.get_text_size(self.font, self.prompt)
         inputsize = [self.size[0]-labelsize[0]-3*self.padding[0], self.size[1]-2*self.padding[1]]
         inputpos = Vector2(labelsize[0]+2*self.padding[0], self.padding[1])
-        self.inputline = InputLine(color=self.color, bgcolor=self.bgcolor, font=self.font, position=inputpos, size=inputsize)
+        self.inputline = InputLine(color=self.color, bgcolor=Color(20, 20, 20), font=self.font, position=inputpos, size=inputsize)
         self.add_child(self.inputline)
+        self.inputline.focused = True
 
 
     def on_draw(self, surface):

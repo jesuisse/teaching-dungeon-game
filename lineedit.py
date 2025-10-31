@@ -115,7 +115,8 @@ class InputLine(CanvasRectAreaItem):
         if self.focused:
             s = ''.join(self.text[0:self.pos])
             dims = self.font.size(s)
-            _draw.draw_line(surface, (self.padding[0]+dims[0], self.padding[1]), (self.padding[0]+dims[0], self.padding[1]+dims[1]-1), self.color, 2)
+            posy = (self.size[1]-2*self.padding[1] - dims[1])/2
+            _draw.draw_line(surface, (self.padding[0]+dims[0], posy), (self.padding[0]+dims[0], posy+dims[1]-1), self.color, 2)
 
     def getKeyHandler(self, k):
         if k in InputLine.handlers:
@@ -123,17 +124,10 @@ class InputLine(CanvasRectAreaItem):
         else:
             return None
 
-    def on_input(self, event):
-        """
-        if event.type == GOTFOCUS:
-            print("Got focus")
-        if event.type == LOSTFOCUS:
-            print("Lost focus")
-        """
-        print(event)
+    def on_input(self, event):                
         if event.type == pygame.MOUSEBUTTONDOWN:
             #GUI.set_focus(self)
-            print("Mouse press in Inputline")
+            pass
         if event.type == pygame.KEYDOWN:
             k = event.key
             handler = self.getKeyHandler(k)

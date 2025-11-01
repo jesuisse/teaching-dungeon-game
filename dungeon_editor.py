@@ -1,5 +1,4 @@
 import sys, os.path, pygame.transform
-sys.path.append(os.path.join(sys.path[0], ".."))
 sys.path.append((os.path.join(sys.path[0], "graphics2d")))
 
 from graphics2d import *
@@ -19,7 +18,7 @@ HEIGHT = 800
 RESIZABLE = False
 ALWAYS_REDRAW = False
 
-## Im Moment ist der verwendete Tile-Atlas immer der mit ID 1
+## Currently we only use a single Tile Atlas (with the atlas id 1 in the storage backend)
 ATLAS_ID = 1
 
 # Grösse des editierbaren Raumes in Tiles
@@ -30,29 +29,18 @@ grid_rect = None
 tileset_rect = None
 
 
-
 # 1 = drawing, -1 = erasing
 draw_mode = 0
 
 tile_atlas = None
 tilemap = None
 
-# Storage id des aktuell im Editor bearbeiteten Raums
+# Storage id of the room that's currently being edited
 active_room_id = None
 
 def on_draw():
-    # Wird aufgerufen, um den Inhalt des Grafikfensters neu zu zeichnen
-
-    # Grösse des Grafikfensters ausfindig machen
-    breite, höhe = get_window_size()
-    
-    draw_filled_rect((0, 0), (breite, höhe), Color(70, 70, 70))
-       
-    # Rendert Text
-    fontname = get_default_fontname()
-    fontsize = 30
-    #draw_text(fontname, fontsize, "Dare to do peachy things!", (40, 800), Color("orange"))
-    
+    # Give the window a background color
+    get_window_surface().fill(Color(70, 70, 70))
 
 
 def to_local(canvasitem, pos):
@@ -129,7 +117,7 @@ def on_roomname_entered(prompt):
     global active_room_id
     name = prompt.get_text()
     active_room_id = storage.store_as_new_room(name, tilemap)
-    print("Neuer Raum mit id", active_room_id, "erzeugt")
+    print(f"Created new room with id {active_room_id}")
     tree = get_scenetree()
     tree.root.remove_child(prompt)
 
@@ -143,7 +131,6 @@ def on_load_id_entered(prompt):
     tree = get_scenetree()
     tree.root.remove_child(prompt)
 
-
     
 def open_textbox(label, callback):
     font = get_font(get_default_fontname(), 24)
@@ -154,23 +141,18 @@ def open_textbox(label, callback):
     tree.make_modal(prompt)
 
 
+def initialize_gui():
+    global tile_image, tile_atlas, tilemap
 
-def on_ready():
-    # Wird aufgerufen, wenn das Grafik-Framework bereit ist, unmittelbar vor dem Start der Event Loop.
-
-    global tile_image, textinput, active_popup, tile_atlas, tilemap
-
+    path = "resources/ohmydungeon_v1.1.png"
     try:
-        tile_image = load_image("resources/ohmydungeon_v1.1.png")
+        tile_image = load_image(path)
         size = (tile_image.get_width()*ATLAS_SCALE, tile_image.get_height()*ATLAS_SCALE)
         tile_image = pygame.transform.scale(tile_image, size)
 
     except FileNotFoundError:
-        print("Tile Atlas image not found...")
+        print(f"Tile Atlas image not found at {path}...")
         sys.exit(1)
-
-    # Connect to the storage backend (in our case, sqlite)
-    storage.db_connect()
 
     set_window_title("Dungeon Editor")
 
@@ -186,7 +168,18 @@ def on_ready():
     root.add_child(tilemap)
         
     tree.set_root(root)
-    
+
+
+
+def on_ready():
+    # Wird aufgerufen, wenn das Grafik-Framework bereit ist, unmittelbar vor dem Start der Event Loop.
+    storage.initialize()
+    initialize_gui()
+
+def on_exit():
+    # Wird aufgerufen, wenn das Grafik-Framework beendet wird, unmittelbar vor dem Verlassen der Event Loop.
+    storage.finalize()
+
 
 # Konfiguriert und startet das Framework
 go()

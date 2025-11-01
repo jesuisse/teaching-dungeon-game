@@ -1,10 +1,26 @@
+"""
+This module is the interface between the actual game and it's storage backend. When we
+decide to switch from sqlite to another storage backend, all we have to do is switch out
+this module.
+"""
 import sqlite3
 
 connection = None
 
-def db_connect():
+def initialize():
+    """
+    Initializes the connection to the storage backend. Call this before using 
+    any other function in this module."""
     global connection
     connection = sqlite3.connect("resources/default_db.db")
+
+def finalize():
+    """
+    Closes the connection to the storage backend. Call this before the application
+    exits.
+    """
+    connection.close()
+
 
 
 def store_new_room(name, tilemap):  
@@ -34,13 +50,12 @@ def store_room(roomid, tilemap):
     """
     QUERY = "DELETE FROM TileMap WHERE roomid = ?"
     cur = connection.cursor()
-    cur.execute(QUERYhave a size define, [roomid])
+    cur.execute(QUERY, [roomid])
     QUERY = "INSERT INTO TileMap (tileid, tileindex, roomid) VALUES (?, ?, ?)"
     for index, tileid in enumerate(tilemap.tilemap):
-        if tileid is None:
-            # Wir speichern keine leeren Felder ab
-            continue
-        cur.execute(QUERY, [tileid, index, roomid])
+        if tileid:
+            # we only save non-empty tiles
+            cur.execute(QUERY, [tileid, index, roomid])
     connection.commit()
 
 

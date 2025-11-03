@@ -31,17 +31,22 @@ class TileMap(CanvasRectAreaItem):
             self.tilesize = (48, 48)
         
         if 'size' not in kwargs:
-            kwargs['size'] = [self.tilesize[0] * self.mapsize[0], self.tilesize[1] * self.mapsize[1]]
+            kwargs['size'] = [self.tilesize[0] * self.mapsize[0] + 2, self.tilesize[1] * self.mapsize[1] + 2]
         
         self.hovered_cell = -1
 
         super().__init__(**kwargs)
+        self.min_size = Vector2(self.size)
+        self.max_size = Vector2(self.size)
 
 
     def get_cell_index(self, local_point):
         """
         Given a point in local coordinates, returns the index of the cell at this point
         """
+        if local_point[0] >= self.mapsize[0] * self.tilesize[0]:
+            return -1
+
         relx = local_point[0]
         rely = local_point[1]
 

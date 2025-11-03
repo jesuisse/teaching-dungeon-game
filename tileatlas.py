@@ -16,21 +16,24 @@ class TileAtlas(CanvasRectAreaItem):
             self.atlassize = (1, 1)
 
         if 'size' not in kwargs:
-            kwargs['size'] = [self.tilesize[0] * self.atlassize[0], self.tilesize[1] * self.atlassize[1]]
-        
+            kwargs['size'] = [self.tilesize[0] * self.atlassize[0] + 1, self.tilesize[1] * self.atlassize[1] + 1]        
         if 'image' in kwargs:
             self.image = kwargs['image']
         else:
             self.image = None
-
+        
         self.hovered_tile = -1
-        self.selected_tile = -1
-               
+        self.selected_tile = -1               
 
         super().__init__(**kwargs)
+        self.min_size = Vector2(self.size)
+        self.max_size = Vector2(self.size)
 
 
     def get_tile_index(self, local_point):            
+        if local_point[0] >= self.atlassize[0] * self.tilesize[0]:
+            return -1
+        
         relx = local_point[0]
         rely = local_point[1]
 

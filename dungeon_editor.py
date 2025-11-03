@@ -8,14 +8,16 @@ from tileatlas import TileAtlas
 from tilemap import TileMap
 import storage
 
-# Legt fest, wie stark die Atlas-Bilder hochskaliert werden. 
+# Defines scaling of the tile atlas images. If you are using this
+# application on a low resolution monitor, change this to 1.5, 2 or 2.5
+# as needed.
 ATLAS_SCALE = 3
 
-# Diese Konstanten legen die Grösse des Grafikfensters fest
+# Initial size of the window
 WIDTH = 1060
 HEIGHT = 800
 
-RESIZABLE = False
+RESIZABLE = True
 ALWAYS_REDRAW = False
 
 ## Currently we only use a single Tile Atlas (with the atlas id 1 in the storage backend)
@@ -157,22 +159,24 @@ def initialize_gui():
     set_window_title("Dungeon Editor")
 
     # Atlas aus Bild erzeugen und positionieren
-    tile_atlas = TileAtlas(position=Vector2(750, 20), tilesize=(16*ATLAS_SCALE,16*ATLAS_SCALE), atlassize=(6,15), image=tile_image)
+    tile_atlas = TileAtlas(position=Vector2(750, 20), tilesize=(16*ATLAS_SCALE,16*ATLAS_SCALE), atlassize=(6,15), image=tile_image, flags=TileAtlas.ALIGN_CENTERED)
 
     # Die tilemap erzeugen 
-    tilemap = TileMap(position=Vector2(20, 20), mapsize=MAPSIZE, atlas=tile_atlas) 
+    tilemap = TileMap(position=Vector2(20, 20), mapsize=MAPSIZE, atlas=tile_atlas, flags=TileMap.ALIGN_CENTERED) 
     
     tree = get_scenetree()
-    root = CanvasItem(position=Vector2(0, 0), name="root")
-    root.add_child(tile_atlas)
+    
+    root = HBoxContainer(name="box", separation=5)
+    root.size = Vector2(WIDTH, HEIGHT)
     root.add_child(tilemap)
-        
+    root.add_child(tile_atlas)
+            
     tree.set_root(root)
 
 
 
 def on_ready():
-    # Wird aufgerufen, wenn das Grafik-Framework bereit ist, unmittelbar vor dem Start der Event Loop.
+    # Wird aufgerufen, wenn das Grafik-Framework bereit ist, unmittelbar vor dem Start der Event Loop.    
     storage.initialize()
     initialize_gui()
 

@@ -34,6 +34,7 @@ class TileMap(CanvasRectAreaItem):
             kwargs['size'] = [self.tilesize[0] * self.mapsize[0] + 2, self.tilesize[1] * self.mapsize[1] + 2]
         
         self.hovered_cell = -1
+        self.draw_mode = 0
 
         super().__init__(**kwargs)
         self.min_size = Vector2(self.size)
@@ -110,3 +111,26 @@ class TileMap(CanvasRectAreaItem):
             hover_color = YELLOW
             rect = self.get_cell_rect(self.hovered_cell)        
             _draw.draw_rect(surface, rect, hover_color, 2)
+
+    def _to_local(self, pos):
+        return (pos[0]-self.position[0], pos[1]-self.position[1])
+
+    def on_gui_input(self, event):
+        if event.type == MOUSEBUTTONDOWN:
+            if self.hovered_cell != -1 and self.atlas.get_selected_tile() != -1:
+                if event.button == 1:
+                    self.draw_mode = 1
+                    self.set_tile(self.hovered_cell, self.atlas.get_selected_tile())
+                elif event.button == 3:
+                    self.draw_mode = 2
+                    self.set_tile(self.hovered_cell, None)
+        elif event.type == MOUSEMOTION:
+            cell_idx = self.get_cell_index(self._to_local(event.pos))
+            self.set_hovered_cell(cell_idx)
+            if self.draw_mode == 1:
+                self.set_tile(self.hovered_cell, self.atlas.get_selected_tile())
+            elif self.draw_mode == 2:
+                self.set_tile(self.hovered_cell, None)
+        elif event.type == MOUSEBUTTONUP:
+            if self.draw_mode:
+                self.draw_mode = 0

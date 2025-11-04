@@ -63,6 +63,8 @@ class TileAtlas(CanvasRectAreaItem):
         self.selected_tile = index
         self.request_redraw()
 
+    def get_selected_tile(self):
+        return self.selected_tile
 
     def on_draw(self, surface):        
         self._draw_tileset_grid(surface)
@@ -95,3 +97,15 @@ class TileAtlas(CanvasRectAreaItem):
             select_color = Color(255, 255, 255)
             rect = self.get_tile_rect(self.selected_tile)            
             _draw.draw_rect(surface, rect, select_color, 2)
+
+    def _to_local(self, pos):
+        return (pos[0]-self.position[0], pos[1]-self.position[1])
+
+    def on_gui_input(self, event):
+        if event.type == MOUSEBUTTONDOWN:
+            if self.hovered_tile != -1:
+                self.set_selected_tile(self.hovered_tile)
+                print("Tile selected:", self.hovered_tile)
+        elif event.type == MOUSEMOTION:
+            tile_idx = self.get_tile_index(self._to_local(event.pos))
+            self.set_hovered_tile(tile_idx)

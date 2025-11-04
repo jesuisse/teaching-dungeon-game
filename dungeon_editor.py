@@ -63,35 +63,7 @@ def on_input(event):
             tile_atlas.set_hovered_tile(-1)
         if tilemap.hovered_cell != -1 and not mouse_in_tilemap:
             tilemap.set_hovered_cell(-1)
-
-        # Handle hovering and drawing tiles
-        if mouse_in_tile_atlas:
-            tile_idx = tile_atlas.get_tile_index(to_local(tile_atlas, mouse_coords))
-            tile_atlas.set_hovered_tile(tile_idx)            
-                    
-        elif mouse_in_tilemap:
-            cell_idx = tilemap.get_cell_index(to_local(tilemap, mouse_coords))
-            tilemap.set_hovered_cell(cell_idx)
-            if draw_mode == 1:
-                tilemap.set_tile(tilemap.hovered_cell, tile_atlas.selected_tile)
-            elif draw_mode == 2:
-                tilemap.set_tile(tilemap.hovered_cell, None)            
-    
-    if event.type == MOUSEBUTTONDOWN:
-        if tile_atlas.hovered_tile != -1:
-            tile_atlas.set_selected_tile(tile_atlas.hovered_tile)
-        elif tilemap.hovered_cell != -1 and tile_atlas.selected_tile != -1:
-            if event.button == 1:
-                draw_mode = 1
-                tilemap.set_tile(tilemap.hovered_cell, tile_atlas.selected_tile)
-            elif event.button == 3:
-                draw_mode = 2
-                tilemap.set_tile(tilemap.hovered_cell, None)        
-    
-    # stop drawing or erasing tiles
-    if event.type == MOUSEBUTTONUP:
-        if draw_mode:
-            draw_mode = 0
+   
 
     # handle keyboard shortcuts for loading/saving rooms
     if event.type == KEYDOWN and event.key == pygame.K_n:

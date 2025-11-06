@@ -110,3 +110,6 @@ class TileAtlas(CanvasRectAreaItem):
             tile_idx = self.get_tile_index(self._to_local(event.pos))
             if tile_idx != self.hovered_tile:
                 self.set_hovered_tile(tile_idx)
+    
+    def on_mouse_leave(self):
+        self.set_hovered_tile(-1)

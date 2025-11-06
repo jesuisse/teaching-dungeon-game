@@ -134,3 +134,6 @@ class TileMap(CanvasRectAreaItem):
         elif event.type == MOUSEBUTTONUP:
             if self.draw_mode:
                 self.draw_mode = 0
+
+    def on_mouse_leave(self):
+        self.set_hovered_cell(-1)

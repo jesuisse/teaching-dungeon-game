@@ -51,20 +51,7 @@ def to_local(canvasitem, pos):
 
 def on_input(event):
     global draw_mode    
- 
-    if event.type == MOUSEMOTION:
-        mouse_coords = event.pos
-
-        mouse_in_tile_atlas = tile_atlas.get_bbox().collidepoint(mouse_coords)
-        mouse_in_tilemap = tilemap.get_bbox().collidepoint(mouse_coords)
-
-        # Check whether the mouse is still hovering and disable the hover if not
-        if tile_atlas.hovered_tile != -1 and not mouse_in_tile_atlas:
-            tile_atlas.set_hovered_tile(-1)
-        if tilemap.hovered_cell != -1 and not mouse_in_tilemap:
-            tilemap.set_hovered_cell(-1)
-   
-
+     
     # handle keyboard shortcuts for loading/saving rooms
     if event.type == KEYDOWN and event.key == pygame.K_n:
         create_new_room()

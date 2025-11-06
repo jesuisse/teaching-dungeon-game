@@ -108,4 +108,5 @@ class TileAtlas(CanvasRectAreaItem):
                 print("Tile selected:", self.hovered_tile)
         elif event.type == MOUSEMOTION:
             tile_idx = self.get_tile_index(self._to_local(event.pos))
-            self.set_hovered_tile(tile_idx)
+            if tile_idx != self.hovered_tile:
+                self.set_hovered_tile(tile_idx)

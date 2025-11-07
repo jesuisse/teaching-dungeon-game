@@ -57,7 +57,7 @@ def on_input(event):
 
 def on_roomname_entered(prompt, text):
     global active_room_id    
-    active_room_id = storage.store_as_new_room(text, tilemap)
+    active_room_id = storage.store_new_room(text, tilemap)
     status_label.set_text(f"Created new room with id {active_room_id}")
     tree = get_scenetree()    
     tree.request_redraw_all()

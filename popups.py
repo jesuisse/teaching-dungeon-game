@@ -37,7 +37,7 @@ class PopupWindow(CanvasContainer):
         s = surface.get_size()
         mysurface = pygame.Surface(s, pygame.SRCALPHA)
         mysurface.fill(self.bgcolor)
-        surface.blit(mysurface)
+        surface.blit(mysurface, Vector2(0, 0))
         super().on_draw(surface)
 
 

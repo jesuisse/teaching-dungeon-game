@@ -18,6 +18,16 @@ class TileMap(CanvasRectAreaItem):
         else:
             self.tilemap = [None] * self.mapsize[0] * self.mapsize[1]
 
+        if 'objectmap' in kwargs:
+            self.objectmap = kwargs['objectmap']
+        else:
+            self.objectmap = [None] * self.mapsize[0] * self.mapsize[1]
+
+        if 'objectids' in kwargs:
+            self.objectids = kwargs['objectids']
+        else:
+            self.objectids = []
+
         if 'atlas' in kwargs:
             self.atlas = kwargs['atlas']
         else:
@@ -68,6 +78,10 @@ class TileMap(CanvasRectAreaItem):
     def set_tile(self, index, tile_index):
         self.tilemap[index] = tile_index
         self.request_redraw()
+    
+    def set_object(self, index, object_id):
+        self.objectmap[index] = object_id
+        self.request_redraw()
 
     def set_hovered_cell(self, index):
         self.hovered_cell = index
@@ -76,6 +90,7 @@ class TileMap(CanvasRectAreaItem):
     def on_draw(self, surface):
         surface.fill(Color(40, 40, 40))        
         self._draw_tiles(surface)
+        self._draw_objects(surface)
         self._draw_tile_grid(surface)
         self._draw_selection_state(surface)
 
@@ -108,6 +123,19 @@ class TileMap(CanvasRectAreaItem):
                 continue            
             surface.blit(self.atlas.get_tile_image(tileidx), dest_rect.topleft)
     
+    def _draw_objects(self, surface):
+        if self.atlas is None:
+            return
+        
+        for i in range(self.mapsize[0]*self.mapsize[1]):
+            dest_rect = self.get_cell_rect(i)
+            objidx = self.objectmap[i]
+            if objidx is None:
+                continue            
+            surface.blit(self.atlas.get_tile_image(objidx), dest_rect.topleft)
+    
+
+
     def _draw_selection_state(self, surface):
         if self.hovered_cell != -1:
             hover_color = YELLOW
@@ -120,20 +148,29 @@ class TileMap(CanvasRectAreaItem):
 
     def on_gui_input(self, event):
         if event.type == MOUSEBUTTONDOWN:
-            if self.hovered_cell != -1 and self.atlas.get_selected_tile() != -1:
+            tileid = self.atlas.get_selected_tile()
+            if self.hovered_cell != -1 and tileid != -1:
                 if event.button == 1:
-                    self.draw_mode = 1
-                    self.set_tile(self.hovered_cell, self.atlas.get_selected_tile())
+                    self.draw_mode = 1                    
+                    if tileid in self.objectids:
+                        self.set_object(self.hovered_cell, tileid)
+                    else:
+                        self.set_tile(self.hovered_cell, tileid)
                     self.consume_event()
                 elif event.button == 3:
                     self.draw_mode = 2
                     self.set_tile(self.hovered_cell, None)
+                    self.set_object(self.hovered_cell, None)
                     self.consume_event()
         elif event.type == MOUSEMOTION:
             cell_idx = self.get_cell_index(self._to_local(event.pos))
             self.set_hovered_cell(cell_idx)
+            tileid = self.atlas.get_selected_tile()
             if self.draw_mode == 1:
-                self.set_tile(self.hovered_cell, self.atlas.get_selected_tile())
+                if tileid in self.objectids:
+                    self.set_object(self.hovered_cell, tileid)
+                else:            
+                    self.set_tile(self.hovered_cell, tileid)
                 self.consume_event()
             elif self.draw_mode == 2:
                 self.set_tile(self.hovered_cell, None)

@@ -95,11 +95,13 @@ def initialize_gui():
 
     set_window_title("Dungeon Editor")
 
+    objectids = storage.get_tile_object_ids()
+
     # Atlas aus Bild erzeugen und positionieren
     tile_atlas = TileAtlas(tilesize=(16*ATLAS_SCALE,16*ATLAS_SCALE), atlassize=(6,15), image=tile_image, flags=TileAtlas.ALIGN_CENTERED)
 
     # Die tilemap erzeugen 
-    tilemap = TileMap(mapsize=MAPSIZE, atlas=tile_atlas, flags=TileMap.ALIGN_CENTERED) 
+    tilemap = TileMap(mapsize=MAPSIZE, atlas=tile_atlas, objectids=objectids, flags=TileMap.ALIGN_CENTERED) 
     
     tree = get_scenetree()
     

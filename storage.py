@@ -138,8 +138,17 @@ def get_walkable_tile_ids() -> list:
     """
     Returns a list of all walkable tile IDs in the storage backend.
     """
-    # Mockup implementation
-    return [14, 16, 22]
+
+    cur = connection.cursor()
+    QUERY = "SELECT tileid FROM TileInfo WHERE atlasid = ? AND property = ?"
+    cur.execute(QUERY, (1, "walkable",))
+    row = cur.fetchone()
+    tileids = []
+    while row:
+        tileids.append(row[0])
+        row = cur.fetchone()
+    
+    return tileids
 
 
 

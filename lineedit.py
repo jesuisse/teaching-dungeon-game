@@ -140,10 +140,17 @@ class InputLine(CanvasRectAreaItem):
             if handler:
                 handler(self, event)
                 self.set_dirty()
+                self.consume_event()
+            elif len(event.unicode) == 1 and unicodedata.category(event.unicode) != 'Cc':
+                #self.text.insert(self.pos, event.unicode)
+                #self.pos += 1
+                #self.set_dirty()
+                self.consume_event()
         if event.type == pygame.TEXTINPUT:
             self.text.insert(self.pos, event.text)
             self.pos += 1
             self.set_dirty()
+            self.consume_event()
 
         """
         elif len(event.unicode) == 1 and unicodedata.category(event.unicode) != 'Cc':

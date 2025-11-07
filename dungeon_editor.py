@@ -45,14 +45,14 @@ def on_draw():
 def on_input(event):     
     # handle keyboard shortcuts for loading/saving rooms
     if event.type == KEYDOWN and event.key == pygame.K_n:
-        open_textbox("Raumname:", on_roomname_entered)
+        defer_to_next_frame(lambda: open_textbox("Raumname:", on_roomname_entered))
     
     if event.type == KEYDOWN and event.key == pygame.K_l:
-        prompt = open_textbox("Raumid:", on_load_id_entered)
+        defer_to_next_frame(lambda: open_textbox("Raumid:", on_load_id_entered))
         
 
     if event.type == KEYDOWN and event.key == pygame.K_s:
-        storage.store_room(active_room_id, tilemap)
+        defer_to_next_frame(lambda: storage.store_room(active_room_id, tilemap))
 
 
 def on_roomname_entered(prompt, text):

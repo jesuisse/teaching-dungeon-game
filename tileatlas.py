@@ -99,7 +99,8 @@ class TileAtlas(CanvasRectAreaItem):
             _draw.draw_rect(surface, rect, select_color, 2)
 
     def _to_local(self, pos):
-        return (pos[0]-self.position[0], pos[1]-self.position[1])
+        origin = self.get_viewport_position()
+        return (pos[0]-origin[0], pos[1]-origin[1])
 
     def on_gui_input(self, event):
         if event.type == MOUSEBUTTONDOWN:

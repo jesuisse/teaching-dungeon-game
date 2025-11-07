@@ -1,6 +1,7 @@
 import pygame
 import unicodedata
 from graphics2d import *
+from graphics2d.scenetree.sceneitem import Signal
 import graphics2d.drawing as _draw
 
 class InputLine(CanvasRectAreaItem):
@@ -8,6 +9,10 @@ class InputLine(CanvasRectAreaItem):
     A simple input field supporting basic
     editing commands
     """
+
+    # signal definitions    
+    accepted = Signal("accepted", "text")
+    aborted = Signal("aborted")
 
     # The following k_methods take care of key presses. They are configured
     # in the handlers dictionary.
@@ -35,6 +40,12 @@ class InputLine(CanvasRectAreaItem):
             self.pos -= 1
             del self.text[self.pos]
 
+    def k_accept(self, event):
+        self.emit(InputLine.accepted, self.gettext())
+    
+    def k_abort(self, event):
+        self.emit(InputLine.aborted)
+
     handlers = {
        pygame.K_LEFT : k_left,
        pygame.K_RIGHT : k_right,
@@ -42,7 +53,8 @@ class InputLine(CanvasRectAreaItem):
        pygame.K_END : k_end,
        pygame.K_BACKSPACE : k_backspace,
        pygame.K_DELETE : k_delete,
-       pygame.K_RETURN : None,
+       pygame.K_RETURN : k_accept,
+       pygame.K_ESCAPE : k_abort
     }
 
     def __init__(self, **kwargs): 
@@ -66,14 +78,16 @@ class InputLine(CanvasRectAreaItem):
         if "color" in kwargs:
             self.color = kwargs['color']
         else:
-            self.color = Color(3, 3, 3)    
-
+            self.color = Color(3, 3, 3)
 
         if "bgcolor" in kwargs:
             self.bgcolor = kwargs['bgcolor']
         else:
             self.bgcolor = Color(0xa8, 0xa8, 0xa8)    
-                
+
+        ts = _draw.get_text_size(self.font, "M")
+        self.min_size = (ts[0] + 2*self.padding[0], ts[1] + 2 * self.padding[1])
+
 
         self.pos = 0        
         self.dirty = True
@@ -86,14 +100,7 @@ class InputLine(CanvasRectAreaItem):
     def set_dirty(self):
         self.request_redraw()
         self.dirty = True
-
-    def layout(self, dimension):
-        """
-        if self.policy[dimension] == GUI.SHRINK:
-            ts = self.font.size(self.gettext())
-            self.size[dimension] = ts[dimension] + 2 * self.padding[dimension]
-        """
-        self.set_dirty()
+   
 
     def gettext(self):
         return ''.join(self.text)
@@ -101,14 +108,12 @@ class InputLine(CanvasRectAreaItem):
     def render_text(self):
         return self.font.render(self.gettext(), True, self.color)
 
-    def on_draw(self, surface):
-        mysurface = pygame.Surface(self.size, flags=pygame.SRCALPHA)
+    def on_draw(self, surface):        
         rendered = self.render_text()
-        mysurface.fill(self.bgcolor)
+        surface.fill(self.bgcolor)
         posy = (self.size[1]-2*self.padding[1] - rendered.get_height())/2
-        mysurface.blit(rendered, (self.padding[0], posy), (0,0, self.size[0]-2*self.padding[0], self.size[1]-2*self.padding[1]))
-        self.paintCursor(mysurface)
-        surface.blit(mysurface, Vector2(0, 0))
+        surface.blit(rendered, (self.padding[0], posy), (0,0, self.size[0]-2*self.padding[0], self.size[1]-2*self.padding[1]))
+        self.paintCursor(surface)        
         self.dirty = False
 
     def paintCursor(self, surface):
@@ -124,7 +129,8 @@ class InputLine(CanvasRectAreaItem):
         else:
             return None
 
-    def on_input(self, event):                
+    def on_gui_input(self, event): 
+                      
         if event.type == pygame.MOUSEBUTTONDOWN:
             #GUI.set_focus(self)
             pass
@@ -134,8 +140,14 @@ class InputLine(CanvasRectAreaItem):
             if handler:
                 handler(self, event)
                 self.set_dirty()
-            elif len(event.unicode) == 1 and unicodedata.category(event.unicode) != 'Cc':
-                self.text.insert(self.pos, event.unicode)
-                self.pos += 1
-                self.set_dirty()
-            print(''.join(self.text), len(self.text), self.pos)
+        if event.type == pygame.TEXTINPUT:
+            self.text.insert(self.pos, event.text)
+            self.pos += 1
+            self.set_dirty()
+
+        """
+        elif len(event.unicode) == 1 and unicodedata.category(event.unicode) != 'Cc':
+            self.text.insert(self.pos, event.unicode)
+            self.pos += 1
+            self.set_dirty()
+        """

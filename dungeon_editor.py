@@ -2,8 +2,9 @@ import sys, os.path, pygame.transform
 sys.path.append((os.path.join(sys.path[0], "graphics2d")))
 
 from graphics2d import *
-from lineedit import InputLine
-from popups import InputPrompt
+from popups import open_textbox
+from graphics2d.scenetree.label import Label
+from graphics2d.scenetree.canvascontainer import CanvasContainer
 from tileatlas import TileAtlas
 from tilemap import TileMap
 import storage
@@ -11,7 +12,7 @@ import storage
 # Defines scaling of the tile atlas images. If you are using this
 # application on a low resolution monitor, change this to 1.5, 2 or 2.5
 # as needed.
-ATLAS_SCALE = 3
+ATLAS_SCALE = 2
 
 # Initial size of the window
 WIDTH = 1060
@@ -23,19 +24,15 @@ ALWAYS_REDRAW = False
 ## Currently we only use a single Tile Atlas (with the atlas id 1 in the storage backend)
 ATLAS_ID = 1
 
-# Grösse des editierbaren Raumes in Tiles
+# Size of the room in tiles
 MAPSIZE = (15, 15)
 
 tile_image = None
-grid_rect = None
-tileset_rect = None
-
-
-# 1 = drawing, -1 = erasing
-draw_mode = 0
 
 tile_atlas = None
 tilemap = None
+
+status_label = None
 
 # Storage id of the room that's currently being edited
 active_room_id = None
@@ -45,65 +42,46 @@ def on_draw():
     get_window_surface().fill(Color(70, 70, 70))
 
 
-def to_local(canvasitem, pos):
-    return (pos[0]-canvasitem.position[0], pos[1]-canvasitem.position[1])
-
-
-def on_input(event):
-    global draw_mode    
-     
+def on_input(event):     
     # handle keyboard shortcuts for loading/saving rooms
     if event.type == KEYDOWN and event.key == pygame.K_n:
-        create_new_room()
+        open_textbox("Raumname:", on_roomname_entered)
     
     if event.type == KEYDOWN and event.key == pygame.K_l:
-        load_room()
+        prompt = open_textbox("Raumid:", on_load_id_entered)
+        
 
     if event.type == KEYDOWN and event.key == pygame.K_s:
-        store_room()
+        storage.store_room(active_room_id, tilemap)
 
 
-
-def create_new_room():
-    open_textbox("Raumname:", on_roomname_entered)
-
-def store_room():
-    storage.store_room(active_room_id, tilemap)
-
-def load_room():
-    open_textbox("Raumid:", on_load_id_entered)
-
-
-def on_roomname_entered(prompt):
-    global active_room_id
-    name = prompt.get_text()
-    active_room_id = storage.store_as_new_room(name, tilemap)
-    print(f"Created new room with id {active_room_id}")
-    tree = get_scenetree()
-    tree.root.remove_child(prompt)
-
-def on_load_id_entered(prompt):
-    global active_room_id
-    active_room_id = int(prompt.get_text())
-    tilemap_data = storage.load_tilemap_data(active_room_id)
-    if tilemap_data:
-        tilemap.tilemap = tilemap_data
-        tilemap.request_redraw()
-    tree = get_scenetree()
-    tree.root.remove_child(prompt)
-
-    
-def open_textbox(label, callback):
-    font = get_font(get_default_fontname(), 24)
-    prompt = InputPrompt(prompt=label, size=Vector2(700, 100), color=Color(150,150,150), bgcolor=Color(25, 25, 25, 200),
-            font=font, position=Vector2(30, 150), padding=(20, 20), callback=lambda: callback(prompt))
+def on_roomname_entered(prompt, text):
+    global active_room_id    
+    active_room_id = storage.store_as_new_room(text, tilemap)
+    status_label.set_text(f"Created new room with id {active_room_id}")
     tree = get_scenetree()    
-    tree.root.add_child(prompt)
-    tree.make_modal(prompt)
+    tree.request_redraw_all()
+
+
+def on_load_id_entered(prompt, text):
+    global active_room_id
+    try:
+        active_room_id = int(text)
+        tilemap_data = storage.load_tilemap_data(active_room_id)
+        if tilemap_data:
+            tilemap.tilemap = tilemap_data
+            tilemap.request_redraw()
+    except ValueError:
+        pass
+    finally:
+        status_label.set_text(f"Current room has id {active_room_id}")
+        tree = get_scenetree()
+        tree.request_redraw_all()
+    
 
 
 def initialize_gui():
-    global tile_image, tile_atlas, tilemap
+    global tile_image, tile_atlas, tilemap, status_label
 
     path = "resources/ohmydungeon_v1.1.png"
     try:
@@ -118,31 +96,48 @@ def initialize_gui():
     set_window_title("Dungeon Editor")
 
     # Atlas aus Bild erzeugen und positionieren
-    tile_atlas = TileAtlas(position=Vector2(750, 20), tilesize=(16*ATLAS_SCALE,16*ATLAS_SCALE), atlassize=(6,15), image=tile_image, flags=TileAtlas.ALIGN_CENTERED)
+    tile_atlas = TileAtlas(tilesize=(16*ATLAS_SCALE,16*ATLAS_SCALE), atlassize=(6,15), image=tile_image, flags=TileAtlas.ALIGN_CENTERED)
 
     # Die tilemap erzeugen 
-    tilemap = TileMap(position=Vector2(20, 20), mapsize=MAPSIZE, atlas=tile_atlas, flags=TileMap.ALIGN_CENTERED) 
+    tilemap = TileMap(mapsize=MAPSIZE, atlas=tile_atlas, flags=TileMap.ALIGN_CENTERED) 
     
     tree = get_scenetree()
     
-    root = HBoxContainer(name="box", separation=5)
+    status_label = Label(name="label", text="Current room is new", flags=Label.ALIGN_CENTERED)
+
+    pc = PanelContainer(name="panelcontainer", bg_color=Color(30, 30, 30), borders=(0, 10), max_size=(None, 40))
+    pc.add_child(status_label)
+    statuspanel = HBoxContainer(name="statuspanel", separation=5)    
+    statuspanel.add_child(pc)
+    statuspanel.max_size = (None, 20)
+
+    content = HBoxContainer(name="content-hbox", separation=5)
+    content.add_child(tilemap)    
+    content.add_child(tile_atlas)
+    
+    root = VBoxContainer(name="root", separation=0)
     root.size = Vector2(WIDTH, HEIGHT)
-    root.add_child(tilemap)
-    root.add_child(tile_atlas)
-            
+    root.add_child(statuspanel)
+    root.add_child(content)
+        
     tree.set_root(root)
 
 
-
 def on_ready():
-    # Wird aufgerufen, wenn das Grafik-Framework bereit ist, unmittelbar vor dem Start der Event Loop.    
+    global ATLAS_SCALE
+
+    # Adjust tile size for higher resolution monitors
+    resolution = get_monitor_resolution()
+    if min(resolution.x, resolution.y) > 1000:
+        ATLAS_SCALE = 3
+    
     storage.initialize()
     initialize_gui()
 
-def on_exit():
-    # Wird aufgerufen, wenn das Grafik-Framework beendet wird, unmittelbar vor dem Verlassen der Event Loop.
+
+def on_exit():    
     storage.finalize()
 
 
-# Konfiguriert und startet das Framework
+# Starts the framework and its event loop
 go()

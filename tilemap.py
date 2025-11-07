@@ -47,6 +47,8 @@ class TileMap(CanvasRectAreaItem):
         """
         if local_point[0] >= self.mapsize[0] * self.tilesize[0]:
             return -1
+        if local_point[1] >= self.mapsize[1] * self.tilesize[1]:
+            return -1
 
         relx = local_point[0]
         rely = local_point[1]
@@ -113,7 +115,8 @@ class TileMap(CanvasRectAreaItem):
             _draw.draw_rect(surface, rect, hover_color, 2)
 
     def _to_local(self, pos):
-        return (pos[0]-self.position[0], pos[1]-self.position[1])
+        origin = self.get_viewport_position()
+        return (pos[0]-origin[0], pos[1]-origin[1])
 
     def on_gui_input(self, event):
         if event.type == MOUSEBUTTONDOWN:
@@ -121,19 +124,24 @@ class TileMap(CanvasRectAreaItem):
                 if event.button == 1:
                     self.draw_mode = 1
                     self.set_tile(self.hovered_cell, self.atlas.get_selected_tile())
+                    self.consume_event()
                 elif event.button == 3:
                     self.draw_mode = 2
                     self.set_tile(self.hovered_cell, None)
+                    self.consume_event()
         elif event.type == MOUSEMOTION:
             cell_idx = self.get_cell_index(self._to_local(event.pos))
             self.set_hovered_cell(cell_idx)
             if self.draw_mode == 1:
                 self.set_tile(self.hovered_cell, self.atlas.get_selected_tile())
+                self.consume_event()
             elif self.draw_mode == 2:
                 self.set_tile(self.hovered_cell, None)
+                self.consume_event()
         elif event.type == MOUSEBUTTONUP:
             if self.draw_mode:
                 self.draw_mode = 0
+                self.consume_event()
 
     def on_mouse_leave(self):
         self.set_hovered_cell(-1)

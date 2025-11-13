@@ -1,10 +1,12 @@
 import pygame
+import math
 
 from graphics2d import *
 from lineedit import InputLine
 from graphics2d.scenetree.label import Label
 from graphics2d.scenetree.canvascontainer import CanvasContainer
 import graphics2d.drawing as _draw
+import graphics2d.constants as G2D
 
 
 
@@ -69,13 +71,13 @@ class InputPrompt(PopupWindow):
             self.prompt = "Say something:"
              
 
-        self.label = Label(color=self.color, font=self.font, text=self.prompt,flags=Label.ALIGN_CENTERED)
-        self.inputline = InputLine(color=self.color, bgcolor=Color(20, 20, 20), font=self.font, max_size=(None, 35), flags=InputLine.ALIGN_CENTERED)
+        self.label = Label(color=self.color, font=self.font, text=self.prompt, flags=G2D.V_ALIGN_CENTERED+G2D.H_SHRINK)
+        self.inputline = InputLine(color=self.color, bgcolor=Color(90, 90, 90), padding=[5, 10], font=self.font, flags=G2D.V_ALIGN_CENTERED+G2D.H_EXPAND)
         
         self.listen(self.inputline, InputLine.accepted, self.on_accepted)
         self.listen(self.inputline, InputLine.aborted, self.on_aborted)
         
-        hbox = HBoxContainer(min_size=(100, 30), max_size=(None, 30))
+        hbox = HBoxContainer()
         hbox.add_child(self.label)
         hbox.add_child(self.inputline)
         
@@ -112,25 +114,31 @@ class InputPrompt(PopupWindow):
 
 
 
-def open_textbox(label, callback) -> InputPrompt:
+def open_inputbox(prompt : str, callback) -> InputPrompt:
     wsize = get_window_size()
     tsize = Vector2(700, 100)
     tpos = Vector2(wsize.x/2 - tsize.x/2, wsize.y/2 - tsize.y/2)
     font = get_font(get_default_fontname(), 24)
-    prompt = InputPrompt(prompt=label, size=Vector2(700, 100), color=Color(150,150,150), bgcolor=Color(25, 25, 25, 200),
+    item = InputPrompt(prompt=prompt, size=Vector2(700, 100), color=Color(150,150,150), bgcolor=Color(25, 25, 25, 200),
             font=font, position=tpos, padding=(20, 20))    
-    listen(prompt, InputPrompt.accepted, lambda x, text: callback(prompt, text))    
+    listen(item, InputPrompt.accepted, lambda x, text: callback(item, text))    
     tree = get_scenetree()
     # TODO: we need to add a SceneItem node in between so the child won't get layouted if the tree root is a layouting 
     # container!
-    tree.root.add_child(prompt)
-    tree.make_modal(prompt)    
-    prompt.grab_focus()
-    prompt.request_redraw()
-    listen(tree.root, CanvasContainer.resized, lambda x, w, h: center_textbox(prompt))
-    return prompt
+    tree.root.add_child(item)
+    tree.make_modal(item)    
+    item.grab_focus()
+    item.request_redraw()
+    listen(tree.root, CanvasContainer.resized, lambda x, w, h: center_textbox(item))
+    return item
+
+def round2int(x : float) -> int:
+    if x - int(x) >=  0.5:
+        return int(math.ceil(x))
+    else:
+        return int(math.floor(x))
 
 def center_textbox(box):
     wsize = get_window_size()
     tsize = Vector2(700, 100)    
-    box.position = Vector2(wsize.x/2 - tsize.x/2, wsize.y/2 - tsize.y/2)
+    box.position = Vector2(round2int(wsize.x/2.0 - tsize.x/2.0), round2int(wsize.y/2.0 - tsize.y/2.0))

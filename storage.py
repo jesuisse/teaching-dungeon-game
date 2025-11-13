@@ -39,6 +39,13 @@ def store_new_room(name, tilemap):
             # Wir speichern keine leeren Felder ab
             continue
         cur.execute(QUERY, [tileid, index, room_id])
+
+    QUERY = "INSERT INTO ObjectMap (objectid, objectindex, roomid) VALUES (?, ?, ?)"
+    for index, objectid in enumerate(tilemap.objectmap):
+        if objectid is None:
+            continue
+        cur.execute(QUERY, [objectid, index, room_id])
+    
     connection.commit()
 
     return room_id
@@ -56,6 +63,11 @@ def store_room(roomid, tilemap):
         if tileid:
             # we only save non-empty tiles
             cur.execute(QUERY, [tileid, index, roomid])
+    QUERY = "INSERT INTO ObjectMap (objectid, objectindex, roomid) VALUES (?, ?, ?)"
+    for index, objectid in enumerate(tilemap.objectmap):
+        if objectid is None:
+            continue
+        cur.execute(QUERY, [objectid, index, roomid])
     connection.commit()
 
 
@@ -77,7 +89,17 @@ def load_tilemap_data(roomid) -> list:
     while row:
         tiles[row[1]] = row[0]
         row = cur.fetchone()
-    return tiles
+
+    QUERY = "SELECT objectid, objectindex FROM ObjectMap WHERE roomid = ?"
+    cur.execute(QUERY, (roomid,))
+    row = cur.fetchone()
+
+    objects = [None]*room_size[0]*room_size[1]
+    while row:
+        objects[row[1]] = row[0]
+        row = cur.fetchone()
+
+    return (tiles, objects)
 
 
 def get_room_size(roomid) -> tuple:
@@ -99,11 +121,23 @@ def get_room_connections(roomid) -> list:
     Returns (tileid, targetroomid, targettileid) tuples of all connections 
     to other rooms from the given room.
     """
-    # Mockup implementation
-    if roomid == 1: 
-        return (68, 2, 142)
-    elif roomid == 2:
-        return (142, 1, 83)
+    cur = connection.cursor()
+    QUERY = "SELECT targetroomid, targettileid FROM room_connections WHERE roomid = ?"
+    cur.execute(QUERY, (currentroomid,))
+    row = cur.fetchone()
+    print(row)
+
+
+def create_room_connection(roomid, tileid, targetroomid, targettileid):
+    cur = connection.cursor()
+    parameters = {
+        'roomid': roomid, 
+        'tileid': tileid, 
+        'targetroomid': targetroomid, 
+        'targettileid': targettileid
+        }
+    cur.execute("INSERT INTO room_connections (roomid, tileid, targetroomid, targettileid) VALUES (:roomid, :tileid, :targetroomid, :targettileid)", parameters)
+    connection.commit()
 
 
 def add_object_to_room(roomid, tileid, objectid):
@@ -176,14 +210,22 @@ def get_player_info(playerid) -> dict:
     }
 
 
-def register_player(playername) -> int:
+def register_player(playername, skin) -> int:
     """
     Returns the player id of the player with the given name.
     Creates a new player if the given name does not exist yet,
     spawning them in room 2.
     """
-    # Mockup implementation always returns player ID 1
-    return 1
+    room_id = 2
+    position = 99
+    last_seen = datetime.now().strftime("%Y-%m-%d %H:%M:%S") #Mit hilfe von ChatGPT
+    QUERY = "INSERT INTO players (name, room_id, position, object_id, last_seen) VALUES (?, ?, ?, ?, ?)"
+    cur = connection.cursor()
+    cur.execute(QUERY, [playername, room_id, position, skin, last_seen])
+    player_id = cur.lastrowid
+    return player_id
+
+
 
 
 def get_player_location(playerid) -> tuple:
@@ -208,8 +250,13 @@ def get_player_inventory_objects(playerid) -> list:
     Note: The same objects can be present in the inventory multiple
     times.
     """
-    # Mockup implementation
-    return [101]
+    cur = connection.cursor()
+    QUERY = "SELECT objectid FROM Inventory WHERE playerid = ?"
+    cur.execute(QUERY, (playerid,))
+    row = cur.fetchone()
+    return [row[0] for row in rows]
+    row = cur.fetchone()
+    return result
 
 
 def add_object_to_player_inventory(playerid, objectid):

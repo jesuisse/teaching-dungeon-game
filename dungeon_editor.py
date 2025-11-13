@@ -2,12 +2,14 @@ import sys, os.path, pygame.transform
 sys.path.append((os.path.join(sys.path[0], "graphics2d")))
 
 from graphics2d import *
-from popups import open_textbox
+import graphics2d.constants as G2D
+from popups import open_inputbox
 from graphics2d.scenetree.label import Label
 from graphics2d.scenetree.canvascontainer import CanvasContainer
 from tileatlas import TileAtlas
 from tilemap import TileMap
 import storage
+
 
 # Defines scaling of the tile atlas images. If you are using this
 # application on a low resolution monitor, change this to 1.5, 2 or 2.5
@@ -45,10 +47,10 @@ def on_draw():
 def on_input(event):     
     # handle keyboard shortcuts for loading/saving rooms
     if event.type == KEYDOWN and event.key == pygame.K_n:
-        defer_to_next_frame(lambda: open_textbox("Raumname:", on_roomname_entered))
+        defer_to_next_frame(lambda: open_inputbox("Raumname:", on_roomname_entered))
     
     if event.type == KEYDOWN and event.key == pygame.K_l:
-        defer_to_next_frame(lambda: open_textbox("Raumid:", on_load_id_entered))
+        defer_to_next_frame(lambda: open_inputbox("Raumid:", on_load_id_entered))
         
 
     if event.type == KEYDOWN and event.key == pygame.K_s:
@@ -69,12 +71,13 @@ def on_load_id_entered(prompt, text):
         active_room_id = int(text)
         tilemap_data = storage.load_tilemap_data(active_room_id)
         if tilemap_data:
-            tilemap.tilemap = tilemap_data
+            tilemap.tilemap = tilemap_data[0]
+            tilemap.objectmap = tilemap_data[1]
             tilemap.request_redraw()
     except ValueError:
         pass
     finally:
-        status_label.set_text(f"Current room has id {active_room_id}")
+        status_label.text = f"Current room has id {active_room_id}"
         tree = get_scenetree()
         tree.request_redraw_all()
     
@@ -98,14 +101,14 @@ def initialize_gui():
     objectids = storage.get_tile_object_ids()
 
     # Atlas aus Bild erzeugen und positionieren
-    tile_atlas = TileAtlas(tilesize=(16*ATLAS_SCALE,16*ATLAS_SCALE), atlassize=(6,15), image=tile_image, flags=TileAtlas.ALIGN_CENTERED)
+    tile_atlas = TileAtlas(tilesize=(16*ATLAS_SCALE,16*ATLAS_SCALE), atlassize=(6,15), image=tile_image, flags=G2D.V_ALIGN_CENTERED)
 
     # Die tilemap erzeugen 
-    tilemap = TileMap(mapsize=MAPSIZE, atlas=tile_atlas, objectids=objectids, flags=TileMap.ALIGN_CENTERED) 
+    tilemap = TileMap(mapsize=MAPSIZE, atlas=tile_atlas, objectids=objectids, flags=G2D.V_ALIGN_CENTERED) 
     
     tree = get_scenetree()
     
-    status_label = Label(name="label", text="Current room is new", flags=Label.ALIGN_CENTERED)
+    status_label = Label(name="label", text="Current room is new", flags=G2D.V_ALIGN_CENTERED)
 
     pc = PanelContainer(name="panelcontainer", bg_color=Color(30, 30, 30), borders=(0, 10), max_size=(None, 40))
     pc.add_child(status_label)
@@ -117,7 +120,7 @@ def initialize_gui():
     content.add_child(tilemap)    
     content.add_child(tile_atlas)
     
-    root = VBoxContainer(name="root", separation=0)
+    root = VBoxContainer(name="root", separation=0, flags=G2D.V_EXPAND)
     root.size = Vector2(WIDTH, HEIGHT)
     root.add_child(statuspanel)
     root.add_child(content)

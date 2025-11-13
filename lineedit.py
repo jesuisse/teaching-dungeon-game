@@ -1,7 +1,7 @@
 import pygame
 import unicodedata
 from graphics2d import *
-from graphics2d.scenetree.sceneitem import Signal
+from graphics2d.scenetree.notification import Notification
 import graphics2d.drawing as _draw
 
 class InputLine(CanvasRectAreaItem):
@@ -11,8 +11,8 @@ class InputLine(CanvasRectAreaItem):
     """
 
     # signal definitions    
-    accepted = Signal("accepted", "text")
-    aborted = Signal("aborted")
+    accepted = Notification("accepted", "text")
+    aborted = Notification("aborted")
 
     # The following k_methods take care of key presses. They are configured
     # in the handlers dictionary.
@@ -84,11 +84,7 @@ class InputLine(CanvasRectAreaItem):
             self.bgcolor = kwargs['bgcolor']
         else:
             self.bgcolor = Color(0xa8, 0xa8, 0xa8)    
-
-        ts = _draw.get_text_size(self.font, "M")
-        self.min_size = (ts[0] + 2*self.padding[0], ts[1] + 2 * self.padding[1])
-
-
+       
         self.pos = 0        
         self.dirty = True
         self.focused = False
@@ -96,6 +92,9 @@ class InputLine(CanvasRectAreaItem):
         if type(self.text) is str:
             self.text = list(self.text)
 
+    def get_content_min_size(self):
+        ts = _draw.get_text_size(self.font, "My")
+        return (ts[0]+2*self.padding[0], ts[1]+2*self.padding[1])
 
     def set_dirty(self):
         self.request_redraw()
@@ -111,8 +110,8 @@ class InputLine(CanvasRectAreaItem):
     def on_draw(self, surface):        
         rendered = self.render_text()
         surface.fill(self.bgcolor)
-        posy = (self.size[1]-2*self.padding[1] - rendered.get_height())/2
-        surface.blit(rendered, (self.padding[0], posy), (0,0, self.size[0]-2*self.padding[0], self.size[1]-2*self.padding[1]))
+        posy = (self.size[1]-rendered.get_height())/2
+        surface.blit(rendered, (self.padding[0], posy))
         self.paintCursor(surface)        
         self.dirty = False
 

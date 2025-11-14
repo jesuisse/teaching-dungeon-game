@@ -50,7 +50,7 @@ def load_room(roomid):
 def initialize_gui():
     global status_label
 
-    set_window_title("Dungeon Game v0.1")
+    set_window_title("Dungeon Game v0.3")
 
     objectids = storage.get_tile_object_ids()
     walkable_tiles = storage.get_walkable_tile_ids()

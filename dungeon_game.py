@@ -7,10 +7,11 @@ from graphics2d import *
 import graphics2d.constants as G2D
 from graphics2d.scenetree.canvascontainer import FreeLayoutContainer, CanvasContainer, HBoxContainer, VBoxContainer
 from graphics2d.scenetree.label import Label
-from graphics2d.scenetree.notification import listen
+from graphics2d.scenetree.notification import listen, Notification
 from popups import open_inputbox
 from tileatlas import TileAtlas
 from tilemap import TileMap
+from gameworld import GameWorld
 import storage
 
 RESIZABLE = True
@@ -27,48 +28,32 @@ MAPSIZE = (15, 15)
 
 tile_image = None
 
-tilemap = None
+gameworld = None
 
 walkable_tiles = []
 
 active_room_id = None
+# The id of the human player controlling this game instance
+playerid = 1
 
-def center_map(width, height):
-    tilemap.position = Vector2((width-tilemap.size.x)/2, (height-tilemap.size.y)/2)
 
 def load_room(roomid):
     global active_room_id
     active_room_id = roomid
     tilemap_data = storage.load_tilemap_data(active_room_id)
     if tilemap_data:
-        tilemap.tilemap = tilemap_data[0]
-        tilemap.objectmap = tilemap_data[1]
-        tilemap.request_redraw()
+        gameworld.tilemap = tilemap_data[0]
+        gameworld.objectmap = tilemap_data[1]
+        gameworld.request_redraw()
 
 
 def initialize_gui():
-    global tile_image, tilemap, status_label
-
-    path = "resources/ohmydungeon_v1.1.png"
-    try:
-        tile_image = load_image(path)
-        size = (tile_image.get_width()*ATLAS_SCALE, tile_image.get_height()*ATLAS_SCALE)
-        tile_image = pygame.transform.scale(tile_image, size)
-
-    except FileNotFoundError:
-        print(f"Tile Atlas image not found at {path}...")
-        sys.exit(1)
+    global status_label
 
     set_window_title("Dungeon Game v0.1")
 
     objectids = storage.get_tile_object_ids()
-
-    # Atlas aus Bild erzeugen und positionieren
-    tile_atlas = TileAtlas(tilesize=(16*ATLAS_SCALE,16*ATLAS_SCALE), atlassize=(6,15), image=tile_image)
-
-    # Die tilemap erzeugen 
-    tilemap = TileMap(mapsize=MAPSIZE, atlas=tile_atlas, objectids=objectids, flags=G2D.H_ALIGN_CENTERED) 
-
+    walkable_tiles = storage.get_walkable_tile_ids()
 
     status_label = Label(name="label", text="Hi. I'm Dungeon Game Version 0.1", flags=G2D.V_ALIGN_CENTERED)
 
@@ -83,7 +68,7 @@ def initialize_gui():
     vbox = VBoxContainer(name="vbox", separation=0)
     vbox.size = Vector2(WIDTH, HEIGHT)
     vbox.add_child(statuspanel)
-    vbox.add_child(tilemap)
+    vbox.add_child(gameworld)
 
     flc.add_child(vbox)
 
@@ -97,9 +82,17 @@ def initialize_gui():
     listen(flc, CanvasContainer.resized, resizing)
 
 
+def on_portal_entered(gameworld, target_roomid, target_tileindex):
+    print(f"Portal entered to room {target_roomid} at tile {target_tileindex}")
+    load_room(target_roomid)
+    gameworld.player_position = target_tileindex
+    portals = storage.get_room_connections(target_roomid)
+    gameworld.set_portals(portals)
+    gameworld.request_redraw()
+
 
 def on_ready():
-    global ATLAS_SCALE, walkable_tiles
+    global ATLAS_SCALE, gameworld, tile_atlas, tile_image
 
     # Adjust tile size for higher resolution monitors
     resolution = get_monitor_resolution()
@@ -107,12 +100,34 @@ def on_ready():
         ATLAS_SCALE = 3
     
     storage.initialize()
+    
+    path = "resources/ohmydungeon_v1.1.png"
+    try:
+        tile_image = load_image(path)
+        size = (tile_image.get_width()*ATLAS_SCALE, tile_image.get_height()*ATLAS_SCALE)
+        tile_image = pygame.transform.scale(tile_image, size)
+
+    except FileNotFoundError:
+        print(f"Tile Atlas image not found at {path}...")
+        sys.exit(1)
+
+    objectids = storage.get_tile_object_ids()
     walkable_tiles = storage.get_walkable_tile_ids()
+    room_id, player_position = storage.get_player_location(playerid)
+
+    tile_atlas = TileAtlas(tilesize=(16*ATLAS_SCALE,16*ATLAS_SCALE), atlassize=(6,15), image=tile_image)
+    gameworld = GameWorld(mapsize=MAPSIZE, atlas=tile_atlas, objectids=objectids, walkable_tiles=walkable_tiles,
+                          player_position=player_position, flags=G2D.H_ALIGN_CENTERED) 
+    
+    listen(gameworld, GameWorld.portal_entered, on_portal_entered)
+
+    load_room(room_id)
+    portals = storage.get_room_connections(room_id)
+    gameworld.set_portals(portals)
     
     initialize_gui()
     
-    load_room(2)
-    
+        
 
     #open_inputbox("Hello World", lambda x, text:print(text))
 

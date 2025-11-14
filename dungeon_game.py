@@ -27,13 +27,23 @@ MAPSIZE = (15, 15)
 
 tile_image = None
 
-
 tilemap = None
 
+walkable_tiles = []
+
+active_room_id = None
 
 def center_map(width, height):
     tilemap.position = Vector2((width-tilemap.size.x)/2, (height-tilemap.size.y)/2)
 
+def load_room(roomid):
+    global active_room_id
+    active_room_id = roomid
+    tilemap_data = storage.load_tilemap_data(active_room_id)
+    if tilemap_data:
+        tilemap.tilemap = tilemap_data[0]
+        tilemap.objectmap = tilemap_data[1]
+        tilemap.request_redraw()
 
 
 def initialize_gui():
@@ -58,12 +68,11 @@ def initialize_gui():
 
     # Die tilemap erzeugen 
     tilemap = TileMap(mapsize=MAPSIZE, atlas=tile_atlas, objectids=objectids, flags=G2D.H_ALIGN_CENTERED) 
-    
 
 
     status_label = Label(name="label", text="Hi. I'm Dungeon Game Version 0.1", flags=G2D.V_ALIGN_CENTERED)
 
-    pc = PanelContainer(name="panelcontainer", bg_color=Color(30, 30, 30), borders=(0, 5), max_size=(None, 40), flags=G2D.H_EXPAND)
+    pc = PanelContainer(name="panelcontainer", bg_color=Color(30, 30, 30), borders=(0, 0), max_size=(None, 40), flags=G2D.H_EXPAND)
     pc.add_child(status_label)
     statuspanel = HBoxContainer(name="statuspanel", separation=5)    
     statuspanel.add_child(pc)
@@ -90,7 +99,7 @@ def initialize_gui():
 
 
 def on_ready():
-    global ATLAS_SCALE
+    global ATLAS_SCALE, walkable_tiles
 
     # Adjust tile size for higher resolution monitors
     resolution = get_monitor_resolution()
@@ -98,8 +107,11 @@ def on_ready():
         ATLAS_SCALE = 3
     
     storage.initialize()
+    walkable_tiles = storage.get_walkable_tile_ids()
+    
     initialize_gui()
-   
+    
+    load_room(2)
     
 
     #open_inputbox("Hello World", lambda x, text:print(text))

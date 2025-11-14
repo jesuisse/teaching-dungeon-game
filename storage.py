@@ -174,7 +174,7 @@ def get_walkable_tile_ids() -> list:
     """
 
     cur = connection.cursor()
-    QUERY = "SELECT tileid FROM TileInfo WHERE atlasid = ? AND property = ?"
+    QUERY = "SELECT tile_id FROM TileInfo WHERE atlas_id = ? AND property = ?"
     cur.execute(QUERY, (1, "walkable",))
     row = cur.fetchone()
     tileids = []

@@ -55,7 +55,7 @@ def initialize_gui():
     objectids = storage.get_tile_object_ids()
     walkable_tiles = storage.get_walkable_tile_ids()
 
-    status_label = Label(name="label", text="Hi. I'm Dungeon Game Version 0.1", flags=G2D.V_ALIGN_CENTERED)
+    status_label = Label(name="label", text="Hi. I'm Dungeon Game Version 0.1. Use WASD for player movement.", flags=G2D.V_ALIGN_CENTERED)
 
     pc = PanelContainer(name="panelcontainer", bg_color=Color(30, 30, 30), borders=(0, 0), max_size=(None, 40), flags=G2D.H_EXPAND)
     pc.add_child(status_label)

@@ -4,6 +4,8 @@ decide to switch from sqlite to another storage backend, all we have to do is sw
 this module.
 """
 import sqlite3
+from datetime import datetime
+
 
 connection = None
 
@@ -60,7 +62,7 @@ def store_room(roomid, tilemap):
     cur.execute(QUERY, [roomid])
     QUERY = "INSERT INTO TileMap (tileid, tileindex, roomid) VALUES (?, ?, ?)"
     for index, tileid in enumerate(tilemap.tilemap):
-        if tileid:
+        if tileid is None:
             # we only save non-empty tiles
             cur.execute(QUERY, [tileid, index, roomid])
     QUERY = "INSERT INTO ObjectMap (objectid, objectindex, roomid) VALUES (?, ?, ?)"
@@ -122,10 +124,14 @@ def get_room_connections(roomid) -> list:
     to other rooms from the given room.
     """
     cur = connection.cursor()
-    QUERY = "SELECT targetroomid, targettileid FROM room_connections WHERE roomid = ?"
-    cur.execute(QUERY, (currentroomid,))
-    row = cur.fetchone()
-    print(row)
+    QUERY = "SELECT tileid, targetroomid, targettileid FROM room_connections WHERE roomid = ?"
+    cur.execute(QUERY, (roomid,))
+    rows = cur.fetchall()
+    if rows is None:
+        return rows
+    else:
+        return []
+    
 
 
 def create_room_connection(roomid, tileid, targetroomid, targettileid):
@@ -219,9 +225,10 @@ def register_player(playername, skin) -> int:
     room_id = 2
     position = 99
     last_seen = datetime.now().strftime("%Y-%m-%d %H:%M:%S") #Mit hilfe von ChatGPT
-    QUERY = "INSERT INTO players (name, room_id, position, object_id, last_seen) VALUES (?, ?, ?, ?, ?)"
+    QUERY = "INSERT INTO players (name, room_id, position, object_id) VALUES (?, ?, ?, ?)"
     cur = connection.cursor()
-    cur.execute(QUERY, [playername, room_id, position, skin, last_seen])
+    cur.execute(QUERY, [playername, room_id, position, skin])
+    connection.commit()
     player_id = cur.lastrowid
     return player_id
 
@@ -253,10 +260,9 @@ def get_player_inventory_objects(playerid) -> list:
     cur = connection.cursor()
     QUERY = "SELECT objectid FROM Inventory WHERE playerid = ?"
     cur.execute(QUERY, (playerid,))
-    row = cur.fetchone()
+    rows = cur.fetchall()
     return [row[0] for row in rows]
-    row = cur.fetchone()
-    return result
+    
 
 
 def add_object_to_player_inventory(playerid, objectid):

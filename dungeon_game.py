@@ -126,6 +126,9 @@ def on_ready():
     gameworld.set_portals(portals)
     
     initialize_gui()
+
+    player_id = storage.register_player("Schuppli the Berserker", 50)
+    print(player_id, "ist meine Spieler-ID")
     
         
 

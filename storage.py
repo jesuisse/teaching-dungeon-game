@@ -222,16 +222,22 @@ def register_player(playername, skin) -> int:
     Creates a new player if the given name does not exist yet,
     spawning them in room 2.
     """
-    room_id = 2
-    position = 99
-    last_seen = datetime.now().strftime("%Y-%m-%d %H:%M:%S") #Mit hilfe von ChatGPT
-    QUERY = "INSERT INTO players (name, room_id, position, object_id) VALUES (?, ?, ?, ?)"
+    QUERY = "SELECT player_id FROM players WHERE name = ?"
     cur = connection.cursor()
-    cur.execute(QUERY, [playername, room_id, position, skin])
-    connection.commit()
-    player_id = cur.lastrowid
-    return player_id
-
+    cur.execute(QUERY, (playername,))
+    row = cur.fetchone()
+    if row:
+        return row[0]
+    else:
+        room_id = 2
+        position = 99
+        last_seen = datetime.now().strftime("%Y-%m-%d %H:%M:%S") #Mit hilfe von ChatGPT
+        QUERY = "INSERT INTO players (name, room_id, position, object_id, last_seen) VALUES (?, ?, ?, ?, ?)"
+        cur = connection.cursor()
+        cur.execute(QUERY, [playername, room_id, position, skin])
+        connection.commit()
+        player_id = cur.lastrowid
+        return player_id
 
 
 

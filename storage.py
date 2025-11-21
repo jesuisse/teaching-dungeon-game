@@ -191,14 +191,15 @@ def get_walkable_tile_ids() -> list:
     return tileids
 
 
-
 def get_player_list() -> list:
     """
     Returns a list of all player IDs ever seen in the game.
     """
-    # Mockup implementation
-    return [1, 2, 3, 4, 5]
-
+    cur = connection.cursor()
+    QUERY = "SELECT player_id FROM players"
+    cur.execute(QUERY)
+    rows = cur.fetchall()
+    return [row[0] for row in rows]
 
 
 def get_player_info(playerid) -> dict:

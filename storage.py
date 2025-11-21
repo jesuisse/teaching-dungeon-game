@@ -221,6 +221,9 @@ def register_player(playername, skin) -> int:
     Returns the player id of the player with the given name.
     Creates a new player if the given name does not exist yet,
     spawning them in room 2.
+
+    Note: The name of the player can not be used twice. If used
+    used twice, it will just use the already existing one.
     """
     QUERY = "SELECT player_id FROM players WHERE name = ?"
     cur = connection.cursor()

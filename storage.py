@@ -237,7 +237,7 @@ def register_player(playername, skin) -> int:
         last_seen = datetime.now().strftime("%Y-%m-%d %H:%M:%S") #Mit hilfe von ChatGPT
         QUERY = "INSERT INTO players (name, room_id, position, object_id, last_seen) VALUES (?, ?, ?, ?, ?)"
         cur = connection.cursor()
-        cur.execute(QUERY, [playername, room_id, position, skin])
+        cur.execute(QUERY, [playername, room_id, position, skin, last_seen])
         connection.commit()
         player_id = cur.lastrowid
         return player_id

@@ -50,12 +50,12 @@ def load_room(roomid):
 def initialize_gui():
     global status_label
 
-    set_window_title("Dungeon Game v0.3")
+    set_window_title("Dungeon Game v0.4")
 
     objectids = storage.get_tile_object_ids()
     walkable_tiles = storage.get_walkable_tile_ids()
 
-    status_label = Label(name="label", text="Hi. I'm Dungeon Game Version 0.1. Use WASD for player movement.", flags=G2D.V_ALIGN_CENTERED)
+    status_label = Label(name="label", text="Hi. I'm Dungeon Game Version 0.4. Use WASD for player movement.", flags=G2D.V_ALIGN_CENTERED)
 
     pc = PanelContainer(name="panelcontainer", bg_color=Color(30, 30, 30), borders=(0, 0), max_size=(None, 40), flags=G2D.H_EXPAND)
     pc.add_child(status_label)
@@ -127,7 +127,7 @@ def on_ready():
     
     initialize_gui()
 
-    player_id = storage.register_player("Schuppli the Berserker", 50)
+    player_id = storage.register_player("Berserker", 50)
     print(player_id, "ist meine Spieler-ID")
     
         

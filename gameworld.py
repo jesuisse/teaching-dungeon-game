@@ -3,6 +3,7 @@ from graphics2d import *
 from graphics2d.scenetree.notification import Notification
 import graphics2d.drawing as _draw
 import pygame
+import storage
 
 from tilemap import TileMap
 
@@ -19,6 +20,7 @@ class GameWorld(TileMap):
         self.walkable_tiles = kwargs.get('walkable_tiles', [])
         self.player_skin = kwargs.get('player_skin', DEFAULT_PLAYER_SKIN)
         self.player_position = kwargs.get('player_position', DEFAULT_PLAYER_POSITION)
+        self.player_id = None
         self.room_id = None
         self.portals = []
 
@@ -28,6 +30,13 @@ class GameWorld(TileMap):
         Sets the current room id
         """
         self.room_id = roomid
+    
+
+    def set_player(self, player_id):
+        """
+        Sets the current player
+        """
+        self.player_id = player_id
         
 
     def set_portals(self, portals : list):
@@ -98,12 +107,17 @@ class GameWorld(TileMap):
                 target_tileindex = portal[2]
                 self.emit(GameWorld.portal_entered, target_roomid, target_tileindex)
                 return
+            
+
+    def get_object(self, tile_index):
+        return self.objectmap[tile_index]
 
 
     def on_input(self, event):
         moves = {pygame.K_w: -self.mapsize[0], pygame.K_s: self.mapsize[0],
                  pygame.K_a: -1, pygame.K_d: 1
                  }
+        pickup = {pygame.K_t: 1}
         if event.type == KEYDOWN:
             # handles movement in the four cardinal directions
             if event.key in moves:
@@ -113,4 +127,9 @@ class GameWorld(TileMap):
                     self.request_redraw()
                 if self.is_portal(self.player_position):
                     self.notify_portal_entered()
+            # handles picking up objects
+            if event.key in pickup:
+                if self.get_object(self.player_position):
+                    storage.add_object_to_player_inventory(self.player_id, self.get_object(self.player_position))
+                    storage.remove_object_from_room(self.room_id, self.player_position)
                     

@@ -150,16 +150,28 @@ def add_object_to_room(roomid, tileid, objectid):
     """
     Adds the given object ID to the given tile in the given room.
     """
-    # Mockup implementation (does nothing)
-    pass
+    cur = connection.cursor()
+    parameters = {
+        'objectid': objectid,
+        'objectindex': tileid,
+        'roomid': roomid
+        }
+    cur.execute("INSERT INTO ObjectMap (objectid, objectindex, roomid) VALUES (:objectid, :objectindex, :roomid)", parameters)
+    
+    connection.commit()
 
 
 def remove_object_from_room(roomid, tileid):
     """
     Removes any object from the given tile in the given room.
     """
-    # Mockup implementation (does nothing)
-    pass
+    cur = connection.cursor()    
+    parameters = {
+        'objectindex': tileid,
+        'roomid': roomid
+        }
+    cur.execute("DELETE FROM ObjectMap WHERE objectindex = :objectindex AND roomid = roomid ", parameters)    
+    connection.commit()
 
 
 def get_tile_object_ids() -> list:
@@ -169,9 +181,15 @@ def get_tile_object_ids() -> list:
     A tile object is an object in the tile atlas that can be set 
     above a tile in the tilemap.
     """
-    
-    # Mockup implementation
-    return [44, 45, 46, 47, 48, 49, 50, 54]
+    cur = connection.cursor()
+    TILE_ATLAS = 1
+    QUERY = "SELECT tile_id FROM TileInfo WHERE atlas_id = ? AND property = 'object'"
+
+    cur.execute(QUERY, (TILE_ATLAS,))
+    rows = cur.fetchall()
+    objectids = [row[0] for row in rows]
+    connection.commit()
+    return objectids
 
 
 def get_walkable_tile_ids() -> list:
@@ -191,7 +209,6 @@ def get_walkable_tile_ids() -> list:
     return tileids
 
 
-
 def get_player_list() -> list:
     """
     Returns a list of all player IDs ever seen in the game.
@@ -200,19 +217,21 @@ def get_player_list() -> list:
     return [1, 2, 3, 4, 5]
 
 
-
 def get_player_info(playerid) -> dict:
     """
     Returns a dictionary with player information for the given player ID.
     """
-    # Mockup implementation
+    cur = connection.cursor()
+    result = cur.execute("SELECT player_id, name, room_id titel, position, object_id, last_seen FROM players")
+
+    row = result.fetchone()
     return {
-        'player_id': playerid,
-        'name': 'Player'+str(playerid),
-        'room_id': 1,               # the room id where the player currently is
-        'position': (7, 7),         # the player's current position in room_id
-        'object_id': 54,            # the tile object ID representing the player
-        'last_seen': "2025-11-04 12:00:00" # last seen timestamp
+        'player_id': row[0],
+        'name': row[1],
+        'room_id': row[2],               # the room id where the player currently is
+        'position': row[3],         # the player's current position in room_id
+        'object_id': row[4],          # the tile object ID representing the player
+        'last_seen': row[5]
     }
 
 
@@ -248,8 +267,12 @@ def get_player_location(playerid) -> tuple:
     """
     Returns the current location of the given player as (roomid, tileid)
     """
-    # Mockup implementation always returns room 1, tile 83
-    return (1, 83)
+    cur = connection.cursor()
+    QUERY = "SELECT room_id, position FROM players WHERE player_id = ?"
+    cur.execute(QUERY, (player_id,))
+    row = cur.fetchone()
+    if row:
+        return (row[0], row[1])
 
 
 def set_player_location(playerid, roomid, tileid):
@@ -278,8 +301,10 @@ def add_object_to_player_inventory(playerid, objectid):
     """
     Adds the given object ID to the inventory of the given player.
     """
-    # Mockup implementation (does nothing)
-    pass
+    cur = connection.cursor()
+    QUERY = "INSERT INTO inventory (playerid, objectid) VALUES (?, ?)"
+    cur.execute(QUERY, (playerid, objectid,))
+    connection.commit()
 
 
 def remove_object_from_player_inventory(playerid, objectid):
@@ -287,5 +312,7 @@ def remove_object_from_player_inventory(playerid, objectid):
     Removes one instance of the given object ID from the inventory
     of the given player.
     """
-    # Mockup implementation (does nothing)
-    pass
+    cur = connection.cursor()
+    QUERY = """DELETE FROM inventory WHERE rowid = (SELECT rowid FROM inventory WHERE playerid = ? AND objectid = ? LIMIT 1)"""
+    cur.execute(QUERY, (playerid, objectid,))
+    connection.commit()

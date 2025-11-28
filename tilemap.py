@@ -147,21 +147,27 @@ class TileMap(CanvasRectAreaItem):
         return (pos[0]-origin[0], pos[1]-origin[1])
 
     def on_gui_input(self, event):
+        # verbessertes Zeichnen/entfernen von Luca
         if event.type == MOUSEBUTTONDOWN:
             tileid = self.atlas.get_selected_tile()
             if self.hovered_cell != -1 and tileid != -1:
                 if event.button == 1:
-                    self.draw_mode = 1                    
+                    self.draw_mode = 1
                     if tileid in self.objectids:
                         self.set_object(self.hovered_cell, tileid)
                     else:
                         self.set_tile(self.hovered_cell, tileid)
                     self.consume_event()
+
                 elif event.button == 3:
-                    self.draw_mode = 2
-                    self.set_tile(self.hovered_cell, None)
-                    self.set_object(self.hovered_cell, None)
+                    if self.objectmap[self.hovered_cell] in self.objectids:
+                        self.draw_mode = 2
+                        self.set_object(self.hovered_cell, None)
+                    else:
+                        self.draw_mode = 3
+                        self.set_tile(self.hovered_cell, None)
                     self.consume_event()
+
         elif event.type == MOUSEMOTION:
             cell_idx = self.get_cell_index(self._to_local(event.pos))
             self.set_hovered_cell(cell_idx)
@@ -173,11 +179,10 @@ class TileMap(CanvasRectAreaItem):
                     self.set_tile(self.hovered_cell, tileid)
                 self.consume_event()
             elif self.draw_mode == 2:
-                self.set_tile(self.hovered_cell, None)
+                self.set_object(self.hovered_cell, None)
                 self.consume_event()
-        elif event.type == MOUSEBUTTONUP:
-            if self.draw_mode:
-                self.draw_mode = 0
+            elif self.draw_mode == 3:
+                self.set_tile(self.hovered_cell, None)
                 self.consume_event()
 
     def on_mouse_leave(self):

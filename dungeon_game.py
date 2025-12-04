@@ -128,6 +128,7 @@ def on_ready():
     initialize_gui()
 
     player_id = storage.register_player("Berserker", 50)
+    gameworld.set_player(player_id)
     print(player_id, "ist meine Spieler-ID")
     
         

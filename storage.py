@@ -64,7 +64,9 @@ def store_room(roomid, tilemap):
     for index, tileid in enumerate(tilemap.tilemap):
         if tileid is None:
             # we only save non-empty tiles
-            cur.execute(QUERY, [tileid, index, roomid])
+            continue
+        cur.execute(QUERY, [tileid, index, roomid])
+    
     QUERY = "INSERT INTO ObjectMap (objectid, objectindex, roomid) VALUES (?, ?, ?)"
     for index, objectid in enumerate(tilemap.objectmap):
         if objectid is None:
@@ -127,7 +129,7 @@ def get_room_connections(roomid) -> list:
     QUERY = "SELECT tileid, targetroomid, targettileid FROM room_connections WHERE roomid = ?"
     cur.execute(QUERY, (roomid,))
     rows = cur.fetchall()
-    if rows is None:
+    if rows:
         return rows
     else:
         return []
@@ -271,18 +273,33 @@ def get_player_location(playerid) -> tuple:
     """
     cur = connection.cursor()
     QUERY = "SELECT room_id, position FROM players WHERE player_id = ?"
-    cur.execute(QUERY, (player_id,))
-    row = cur.fetchone()
+    cur.execute(QUERY, (playerid,))
+    row = cur.fetchone()    
     if row:
         return (row[0], row[1])
+    else:
+        return None, None
 
 
 def set_player_location(playerid, roomid, tileid):
     """
     Sets the current location of the given player.
     """
-    # Mockup implementation (does nothing)
-    pass
+    cur = connection.cursor()
+    QUERY = "UPDATE players SET room_id=?, position=? WHERE player_id = ?"
+    cur.execute(QUERY, (roomid, tileid, playerid))
+    connection.commit()
+
+
+def get_players_at(roomid):
+    cur = connection.cursor()
+    QUERY = "SELECT player_id, position FROM players WHERE room_id = ?"
+    cur.execute(QUERY, (roomid,))
+    rows = cur.fetchall()
+    if rows:
+        return rows
+    else:
+        return []
 
 
 def get_player_inventory_objects(playerid) -> list:

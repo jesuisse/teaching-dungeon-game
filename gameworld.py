@@ -14,6 +14,7 @@ class GameWorld(TileMap):
     
     player_moved = Notification("player_moved", "new_tile_index")
     portal_entered = Notification("portal_entered", "target_roomid", "target_tileindex")
+    object_taken = Notification("object_taken", "tile_index", "object_id")
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -23,6 +24,7 @@ class GameWorld(TileMap):
         self.player_id = None
         self.room_id = None
         self.portals = []
+        self.players = []
 
 
     def set_room(self, roomid):
@@ -37,7 +39,24 @@ class GameWorld(TileMap):
         Sets the current player
         """
         self.player_id = player_id
-        
+
+
+    def set_player_position(self, player_position):
+        """
+        Sets the player position
+        """
+        self.player_position = player_position
+
+
+    def set_players(self, players : list):
+        self.players = []
+        for player in players:
+            # ignore our own self
+            if player[0] == self.player_id:
+                continue
+            self.players.append(player)
+        self.request_redraw()
+
 
     def set_portals(self, portals : list):
         """
@@ -45,12 +64,13 @@ class GameWorld(TileMap):
         Each portal is a (tileindex, targetroom, targettileindex) tuple
         """
         self.portals = portals
-
+        
 
     def on_draw(self, surface):
         surface.fill(Color(40, 40, 40))
         self._draw_tiles(surface)
         self._draw_objects(surface)
+        self._draw_other_players(surface)
         self._draw_player(surface)
         self._draw_portals(surface)
         #self._draw_tile_grid(surface)
@@ -65,6 +85,15 @@ class GameWorld(TileMap):
         tile_image = self.atlas.get_tile_image(self.player_skin)
         if tile_image:
             surface.blit(tile_image, Vector2(tile_rect.x, tile_rect.y))
+
+    def _draw_other_players(self, surface):
+        for player in self.players:
+            tile_rect = self.get_cell_rect(player[1])
+            # TODO: Use correct skin, not just the default
+            tile_image = self.atlas.get_tile_image(self.player_skin)
+            if tile_image:
+                surface.blit(tile_image, Vector2(tile_rect.x, tile_rect.y))
+
 
 
     def _draw_portals(self, surface):
@@ -107,7 +136,14 @@ class GameWorld(TileMap):
                 target_tileindex = portal[2]
                 self.emit(GameWorld.portal_entered, target_roomid, target_tileindex)
                 return
-            
+
+
+    def notify_player_moved(self):
+        self.emit(GameWorld.player_moved, self.player_position)
+
+    def notify_object_taken(self):
+        self.emit(GameWorld.object_taken, self.player_position, self.get_object(self.player_position))
+
 
     def get_object(self, tile_index):
         return self.objectmap[tile_index]
@@ -124,12 +160,12 @@ class GameWorld(TileMap):
                 new_position = self.player_position + moves[event.key]
                 if self.can_walk_to(new_position):
                     self.player_position = new_position
+                    self.notify_player_moved()
                     self.request_redraw()
                 if self.is_portal(self.player_position):
                     self.notify_portal_entered()
             # handles picking up objects
             if event.key in pickup:
                 if self.get_object(self.player_position):
-                    storage.add_object_to_player_inventory(self.player_id, self.get_object(self.player_position))
-                    storage.remove_object_from_room(self.room_id, self.player_position)
-                    
+                    self.notify_object_taken()
+                    self.objectmap[self.player_position] = None

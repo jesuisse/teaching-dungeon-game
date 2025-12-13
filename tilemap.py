@@ -50,6 +50,8 @@ class TileMap(CanvasRectAreaItem):
         self.min_size = Vector2(self.size)
         self.max_size = Vector2(self.size)
 
+    def clear_objects(self):
+        self.objectmap = [None] * self.mapsize[0] * self.mapsize[1]
 
     def get_cell_index(self, local_point):
         """

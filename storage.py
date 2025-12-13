@@ -163,6 +163,17 @@ def add_object_to_room(roomid, tileid, objectid):
     connection.commit()
 
 
+def get_objects_at(roomid):
+    cur = connection.cursor()
+    QUERY = "SELECT objectid, objectindex FROM ObjectMap WHERE roomid = ?"
+    cur.execute(QUERY, (roomid,))
+    rows = cur.fetchall()
+    if rows:
+        return rows
+    else:
+        return []
+
+
 def remove_object_from_room(roomid, tileid):
     """
     Removes any object from the given tile in the given room.

@@ -54,12 +54,12 @@ def load_room(roomid):
 def initialize_gui():
     global status_label
 
-    set_window_title("Dungeon Game v0.5")
+    set_window_title("Dungeon Game v0.6")
 
     objectids = storage.get_tile_object_ids()
     walkable_tiles = storage.get_walkable_tile_ids()
 
-    status_label = Label(name="label", text="Hi. I'm Dungeon Game Version 0.5. Use WASD for player movement.", flags=G2D.V_ALIGN_CENTERED)
+    status_label = Label(name="label", text="Hi. I'm Dungeon Game Version 0.6. Use WASD for player movement.", flags=G2D.V_ALIGN_CENTERED)
 
     pc = PanelContainer(name="panelcontainer", bg_color=Color(30, 30, 30), borders=(0, 0), max_size=(None, 40), flags=G2D.H_EXPAND)
     pc.add_child(status_label)
@@ -110,9 +110,11 @@ def on_update(dt):
         return
     
     time_count = 0
-    # do this every 100 ms (eg 10 times pers second)
+    # do this every 100 ms (eg 10 times per second)
     players = storage.get_players_at(gameworld.room_id)
+    objects = storage.get_objects_at(gameworld.room_id)
     gameworld.set_players(players)
+    gameworld.set_objects(objects)
 
         
 

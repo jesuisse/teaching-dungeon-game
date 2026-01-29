@@ -94,7 +94,7 @@ def on_portal_entered(gameworld, target_roomid, target_tileindex):
 
 def on_player_moved(gameworld, new_player_position):
     storage.set_player_location(gameworld.player_id, gameworld.room_id, new_player_position)
-    print(new_player_position)
+
 
 
 def on_object_taken(gameworld, object_position, object_id):

@@ -57,6 +57,10 @@ class GameWorld(TileMap):
             self.players.append(player)
         self.request_redraw()
 
+    def set_objects(self, objects : list):
+        self.clear_objects()
+        for objid, tileindex in objects:
+            self.set_object(tileindex, objid)
 
     def set_portals(self, portals : list):
         """

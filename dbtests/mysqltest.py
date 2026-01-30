@@ -2,16 +2,9 @@ import MySQLdb
 
 connection = None
 
-# IP-Adresse des Servers, z.B. '192.168.0.100'. 'localhost' ist der lokale Computer.
-SERVER_ADDRESS = "localhost"
+# load db configuration and credentials
+from dbconfig_sqlite import *
 
-USERNAME = "dungeonplayer"
-
-# PASSWORT NICHT IN ECHTEN PROJEKTEN HARTKODIEREN!
-# Dies dient nur zu Demonstrationszwecken.
-PASSWORD = "worktogether"
-
-DATABASE = "dungeon_game"
 
 def initialize():
     """
